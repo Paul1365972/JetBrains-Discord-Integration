@@ -77,7 +77,10 @@ subprojects {
 
     tasks {
         withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "1.8"
+            kotlinOptions {
+                jvmTarget = "11"
+                freeCompilerArgs = listOf("-Xjvm-default=enable")
+            }
         }
     }
 }
@@ -89,15 +92,15 @@ tasks {
         gradleReleaseChannel = GradleReleaseChannel.CURRENT.toString()
 
         rejectVersionIf {
-            sequenceOf("alpha", "beta", "rc", "cr", "m", "preview", "eap", "pr")
-                .map { qualifier -> Regex(".*[.-]$qualifier[.\\d-_]*", RegexOption.IGNORE_CASE) }
+            sequenceOf("alpha", "beta", "rc", "cr", "m", "preview", "eap", "pr", """M\d+""")
+                .map { qualifier -> Regex(""".*[.-]$qualifier(release|[.\d-_])*""", RegexOption.IGNORE_CASE) }
                 .any { regex -> regex.matches(candidate.version) }
         }
     }
 
     withType<Wrapper> {
         distributionType = Wrapper.DistributionType.ALL
-        gradleVersion = "6.1.1"
+        gradleVersion = "6.3"
     }
 
     create<Delete>("clean") {

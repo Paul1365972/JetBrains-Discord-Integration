@@ -16,15 +16,19 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.utils
 
-import com.intellij.ide.plugins.PluginManager
-import com.intellij.openapi.extensions.PluginId
+import com.intellij.ide.plugins.PluginManagerCore
 
 object Plugin {
-    val pluginId by lazy { PluginId.getId("com.almightyalpaca.intellij.plugins.discord") }
-    val plugin by lazy { PluginManager.getPlugin(pluginId)!! }
+    private val pluginId by lazy { PluginManagerCore.getPluginByClassName(Plugin::class.java.name)!! }
+    private val plugin by lazy { PluginManagerCore.getPlugin(pluginId)!! }
+
+    fun getId() = pluginId
+    fun getIdString() = pluginId.idString
 
     object Version {
-        val isStable by lazy { plugin.version.matches(Regex("""\d+\.\d+\.\d+""")) }
+        val isStable by lazy { toString().matches(Regex("""\d+\.\d+\.\d+""")) }
         val isEap by lazy { !isStable }
+
+        override fun toString(): String = plugin.version
     }
 }

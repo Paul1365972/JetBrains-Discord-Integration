@@ -16,22 +16,21 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values
 
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.renderer.RenderContext
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.RenderContext
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.SimpleValue
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.ToolTipProvider
-import java.time.OffsetDateTime
 
 typealias TimeValue = SimpleValue<PresenceTime>
 
 enum class PresenceTime(val description: String, override val toolTip: String? = null) : ToolTipProvider {
     APPLICATION("Application") {
-        override fun RenderContext.getResult() = application.openedAt.toResult()
+        override fun RenderContext.getResult() = applicationData?.applicationStartTime.toResult()
     },
     PROJECT("Project") {
-        override fun RenderContext.getResult() = project?.openedAt.toResult()
+        override fun RenderContext.getResult() = projectData?.applicationStartTime.toResult()
     },
     FILE("File") {
-        override fun RenderContext.getResult() = file?.openedAt.toResult()
+        override fun RenderContext.getResult() = fileData?.applicationStartTime.toResult()
     },
     CUSTOM("Custom") {
         override fun RenderContext.getResult() = Result.Custom
@@ -52,7 +51,7 @@ enum class PresenceTime(val description: String, override val toolTip: String? =
         val File = APPLICATION to arrayOf(APPLICATION, PROJECT, FILE, CUSTOM, HIDE)
     }
 
-    fun OffsetDateTime?.toResult() = when (this) {
+    fun Long?.toResult() = when (this) {
         null -> Result.Empty
         else -> Result.Time(this)
     }
@@ -60,6 +59,6 @@ enum class PresenceTime(val description: String, override val toolTip: String? =
     sealed class Result {
         object Empty : Result()
         object Custom : Result()
-        data class Time(val value: OffsetDateTime) : Result()
+        data class Time(val value: Long) : Result()
     }
 }

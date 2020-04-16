@@ -17,9 +17,15 @@
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.renderer
 
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.RichPresence
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.BooleanValue
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.StringValue
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.*
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Plugin
+import java.time.format.DateTimeParseException
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.OffsetDateTime
+
 
 abstract class Renderer(private val context: RenderContext) {
     fun render(): RichPresence = context.render()
@@ -35,7 +41,9 @@ abstract class Renderer(private val context: RenderContext) {
         largeIconText: IconTextValue?,
         smallIcon: IconValue?,
         smallIconText: IconTextValue?,
-        startTimestamp: TimeValue?
+        startTimestamp: TimeValue?,
+        timestampCustom: StringValue?,
+        timestampOverride: BooleanValue
     ): RichPresence {
         return RichPresence(context.icons?.applicationId) presence@{
             this@presence.details = when (val line = details?.getValue()?.get(context)) {
@@ -50,9 +58,21 @@ abstract class Renderer(private val context: RenderContext) {
                 is PresenceLine.Result.String -> line.value
             }
 
-            this@presence.startTimestamp = when (val time = startTimestamp?.getValue()?.get(context)) {
-                null, PresenceTime.Result.Empty -> null
-                is PresenceTime.Result.Time -> time.value
+            val customOffsetDateTime = try {
+                val localDateTime = LocalDateTime.parse(timestampCustom?.getValue()?.replace(' ', 'T'))
+                val offsetDateTime = localDateTime.atOffset(ZoneId.systemDefault().getRules().getOffset(localDateTime))
+                val now = OffsetDateTime.now()
+                if (offsetDateTime.isBefore(now)) offsetDateTime else now
+            } catch (e: DateTimeParseException) {
+                null
+            }
+
+            this@presence.startTimestamp = if (timestampOverride.getValue()) customOffsetDateTime else {
+                when (val time = startTimestamp?.getValue()?.get(context)) {
+                    null, PresenceTime.Result.Empty -> null
+                    PresenceTime.Result.Custom -> customOffsetDateTime
+                    is PresenceTime.Result.Time -> time.value
+                }
             }
 
             this@presence.largeImage = when (val icon = largeIcon?.getValue()?.get(context)) {

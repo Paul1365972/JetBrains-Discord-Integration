@@ -17,7 +17,7 @@
 <idea-plugin>
     <id>com.almightyalpaca.intellij.plugins.discord</id>
     <name>Discord Integration</name>
-    <vendor email="aljoschagrebe@gmail.com" url="https://github.com/Almighty-Alpaca">Almighty Alpaca</vendor>
+    <vendor email="aljoschagrebe@gmail.com" url="https://github.com/Almighty-Alpaca">Almighty Alpaca, modified by Paul1365972</vendor>
 
     <idea-version since-build="191"/>
 

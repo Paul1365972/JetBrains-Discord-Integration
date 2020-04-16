@@ -22,6 +22,9 @@ import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.type
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.*
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
+
 
 @State(name = "DiscordApplicationSettings", storages = [Storage("discord.xml")])
 class ApplicationSettingsImpl : ApplicationSettings, PersistentStateOptionHolderImpl() {
@@ -33,6 +36,9 @@ class ApplicationSettingsImpl : ApplicationSettings, PersistentStateOptionHolder
     private val timeoutOptionPair by timeoutToggle.option.pair()
     override val timeoutMinutes by timeoutOptionPair.first.spinner("Timeout", 5, 1..120, format = "# Minutes")
     override val timeoutResetTimeEnabled by timeoutOptionPair.second.check("Reset open time", true)
+
+    override val timeOverride by check("Override Timestamp", false)
+    override val timeCustom by text("Custom Timestamp", OffsetDateTime.now().toLocalDateTime().truncatedTo(ChronoUnit.SECONDS).toString().replace('T', ' '), 128)
 
     private val group by group("Rich Presence Layout")
     private val preview by group.preview()

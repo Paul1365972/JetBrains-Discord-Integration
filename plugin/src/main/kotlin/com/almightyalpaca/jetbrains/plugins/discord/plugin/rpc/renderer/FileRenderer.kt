@@ -28,6 +28,8 @@ class FileRenderer(context: RenderContext) : Renderer(context) {
         largeIconText = settings.fileIconLargeText,
         smallIcon = settings.fileIconSmall,
         smallIconText = settings.fileIconSmallText,
-        startTimestamp = settings.fileTime
+        startTimestamp = settings.fileTime,
+        timestampCustom = settings.timeCustom,
+            timestampOverride = settings.timeOverride
     )
 }

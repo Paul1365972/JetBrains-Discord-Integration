@@ -28,6 +28,8 @@ class ApplicationRenderer(context: RenderContext) : Renderer(context) {
         largeIconText = settings.applicationIconLargeText,
         smallIcon = settings.applicationIconSmall,
         smallIconText = settings.applicationIconSmallText,
-        startTimestamp = settings.applicationTime
+        startTimestamp = settings.applicationTime,
+        timestampCustom = settings.timeCustom,
+        timestampOverride = settings.timeOverride
     )
 }

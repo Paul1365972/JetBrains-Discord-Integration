@@ -33,6 +33,9 @@ enum class PresenceTime(val description: String, override val toolTip: String? =
     FILE("File") {
         override fun RenderContext.getResult() = file?.openedAt.toResult()
     },
+    CUSTOM("Custom") {
+        override fun RenderContext.getResult() = Result.Custom
+    },
     HIDE("Hide") {
         override fun RenderContext.getResult() = Result.Empty
     };
@@ -44,9 +47,9 @@ enum class PresenceTime(val description: String, override val toolTip: String? =
     override fun toString() = description
 
     companion object {
-        val Application = APPLICATION to arrayOf(APPLICATION, HIDE)
-        val Project = APPLICATION to arrayOf(APPLICATION, PROJECT, HIDE)
-        val File = APPLICATION to arrayOf(APPLICATION, PROJECT, FILE, HIDE)
+        val Application = APPLICATION to arrayOf(APPLICATION, CUSTOM, HIDE)
+        val Project = APPLICATION to arrayOf(APPLICATION, PROJECT, CUSTOM, HIDE)
+        val File = APPLICATION to arrayOf(APPLICATION, PROJECT, FILE, CUSTOM, HIDE)
     }
 
     fun OffsetDateTime?.toResult() = when (this) {
@@ -56,6 +59,7 @@ enum class PresenceTime(val description: String, override val toolTip: String? =
 
     sealed class Result {
         object Empty : Result()
+        object Custom : Result()
         data class Time(val value: OffsetDateTime) : Result()
     }
 }

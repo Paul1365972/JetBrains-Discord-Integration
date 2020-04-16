@@ -28,6 +28,8 @@ class ProjectRenderer(context: RenderContext) : Renderer(context) {
         largeIconText = settings.projectIconLargeText,
         smallIcon = settings.projectIconSmall,
         smallIconText = settings.projectIconSmallText,
-        startTimestamp = settings.projectTime
+        startTimestamp = settings.projectTime,
+        timestampCustom = settings.timeCustom,
+            timestampOverride = settings.timeOverride
     )
 }

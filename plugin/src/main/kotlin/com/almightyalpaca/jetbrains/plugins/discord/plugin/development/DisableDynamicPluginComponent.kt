@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-package com.almightyalpaca.jetbrains.plugins.discord.plugin.utils
+package com.almightyalpaca.jetbrains.plugins.discord.plugin.development
 
-inline fun <T> tryOrNull(print: Boolean = true, block: () -> T) = tryOrDefault(null, print, block)
+import com.intellij.openapi.components.ApplicationComponent
 
-inline fun <T> tryOrDefault(default: T, print: Boolean = true, block: () -> T): T {
-    return try {
-        block()
-    } catch (e: Exception) {
-        if (print) {
-            e.printStackTrace()
-        }
-
-        default
-    }
-}
+/*
+ * This class serves no proper use except prevent the plugin from being dynamically (un)loadable.
+ */
+class DisableDynamicPluginComponent : ApplicationComponent

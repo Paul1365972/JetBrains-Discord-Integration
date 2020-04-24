@@ -17,12 +17,12 @@
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.diagnose
 
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.DisposableCoroutineScope
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.tryCatch
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.tryOrDefault
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.components.Service
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.PluginId
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -30,17 +30,18 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import org.apache.commons.lang3.SystemUtils
 import java.nio.charset.StandardCharsets
+import java.util.*
 
 val diagnoseService: DiagnoseService
-get() = service()
+    get() = service()
 
 @Service
 class DiagnoseService : DisposableCoroutineScope {
     override val parentJob: Job = SupervisorJob()
 
-    val discord = async(start = CoroutineStart.DEFAULT) { tryCatch(Discord.OTHER) { readDiscord() } }
-    val plugins = async(start = CoroutineStart.DEFAULT) { tryCatch(Plugins.NONE) { readPlugins() } }
-    val ide = async(start = CoroutineStart.DEFAULT) { tryCatch(IDE.OTHER) { readIDE() } }
+    val discord = async(start = CoroutineStart.DEFAULT) { tryOrDefault(Discord.OTHER) { readDiscord() } }
+    val plugins = async(start = CoroutineStart.DEFAULT) { tryOrDefault(Plugins.NONE) { readPlugins() } }
+    val ide = async(start = CoroutineStart.DEFAULT) { tryOrDefault(IDE.OTHER) { readIDE() } }
 
     private fun readDiscord(): Discord = when {
         SystemUtils.IS_OS_WINDOWS -> readDiscordWindows()
@@ -147,6 +148,7 @@ class DiagnoseService : DisposableCoroutineScope {
             .asSequence()
             .map(IdeaPluginDescriptor::getPluginId)
             .map(PluginId::getIdString)
+            .filter(Objects::nonNull)
             .count(pluginsIds::contains)
 
         return when (matches) {

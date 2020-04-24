@@ -20,13 +20,13 @@ import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.renderService
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.settings
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.DisposableCoroutineScope
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Plugin
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
-import kotlinx.coroutines.*
-import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
-class NotificationStartupActivity : StartupActivity, DisposableCoroutineScope {
+class NotificationStartupActivity : StartupActivity.Background, DisposableCoroutineScope {
     override val parentJob: Job = SupervisorJob()
 
     override fun runActivity(project: Project) {
@@ -37,10 +37,10 @@ class NotificationStartupActivity : StartupActivity, DisposableCoroutineScope {
     }
 
     private fun checkUpdate() {
-        val version = Plugin.Version.toString()
-        if (version != notificationSettings.lastUpdateNotification && Plugin.Version.isStable) {
-            notificationSettings.lastUpdateNotification = version
-            launch { ApplicationUpdateNotification.show() }
+        val version = Plugin.version
+        if (version != null && version.toString() != notificationSettings.lastUpdateNotification && version.isStable()) {
+            notificationSettings.lastUpdateNotification = version.toString()
+            launch { ApplicationUpdateNotification.show(version.toString()) }
         }
     }
 

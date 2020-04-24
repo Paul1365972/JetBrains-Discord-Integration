@@ -1,3 +1,10 @@
+## v1.2.0
+- Support for 2020.1 (#77)
+- Completely new way how current presence is calculated
+- Move settings to "other" category 
+- Fix presence for very short project names/custom strings
+- Disable timeout option for now due to architectural changes (will be enabled again later)
+
 ## v1.1.1
 - Fix error when closing a project (for real this time 🙏🏼). (#63)
 - Change required IntelliJ version to 2019.1
@@ -22,7 +29,7 @@
 - Support for project descriptions
 - Whole new language detection with support for a wide range of languages and frameworks 
 - Adding more languages is now possible in a matter of seconds without a new plugin update  
-- And so much more I can't even remember what already existed before and what didn't
+- ...And so much more I can't even remember what already existed before and what didn't
  
 ## v0.9.0
 - Added F# (#43)

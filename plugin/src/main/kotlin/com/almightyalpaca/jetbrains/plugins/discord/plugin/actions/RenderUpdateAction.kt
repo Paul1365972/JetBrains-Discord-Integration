@@ -16,8 +16,8 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.actions
 
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Icons
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.renderService
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Icons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
 
@@ -25,11 +25,11 @@ class RenderUpdateAction : DumbAwareAction() {
     init {
         templatePresentation.apply {
             icon = Icons.DISCORD_BLURPLE
-            text = "Update now"
+            text = "Force update now"
         }
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        renderService.render()
+        renderService.render(true)
     }
 }

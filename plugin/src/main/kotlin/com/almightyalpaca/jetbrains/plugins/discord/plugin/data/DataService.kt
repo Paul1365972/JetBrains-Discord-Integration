@@ -17,8 +17,8 @@
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.data
 
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.settings
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.service
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.toSuspendFunction
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.tryOrNull
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -27,9 +27,11 @@ import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.ex.ApplicationInfoEx
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.impl.EditorTabPresentationUtil
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.IdeFrame
@@ -39,16 +41,16 @@ val dataService: DataService
 
 @Service
 class DataService {
-    suspend fun getData(): Data? {
-        val dataManager = DataManager.getInstance()
-
+    suspend fun getData(): Data? = tryOrNull {
         val project: Project?
         val editor: FileEditor?
 
         val window = IdeFocusManager.getGlobalInstance().lastFocusedIdeWindow as IdeFrame?
 
         if (window == null) {
-            val dataContext = dataManager.dataContextFromFocusAsync.toSuspendFunction() ?: return null
+            val dataManager: DataManager? = DataManager.getInstanceIfCreated()
+
+            val dataContext = dataManager?.dataContextFromFocusAsync?.toSuspendFunction() ?: return null
 
             project = dataContext.getData(CommonDataKeys.PROJECT)
             editor = dataContext.getData(PlatformDataKeys.FILE_EDITOR)
@@ -79,17 +81,20 @@ class DataService {
 
                 if (file != null) {
                     val fileName = file.name
-                    val fileUniqueName = ReadAction.compute<String, Exception> {
-                        try {
-                            if (!project.isDisposed) {
-                                EditorTabPresentationUtil.getUniqueEditorTabTitle(project, file, null)
-                            } else {
+                    val fileUniqueName = when (DumbService.isDumb(project)) {
+                        true -> fileName
+                        false -> ReadAction.compute<String, Exception> {
+                            try {
+                                if (!project.isDisposed) {
+                                    EditorTabPresentationUtil.getUniqueEditorTabTitle(project, file, null)
+                                } else {
+                                    fileName
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+
                                 fileName
                             }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-
-                            fileName
                         }
                     }
                     val filePath = file.path

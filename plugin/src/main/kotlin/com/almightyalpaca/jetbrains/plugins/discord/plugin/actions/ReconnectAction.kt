@@ -16,23 +16,23 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.actions
 
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.settings
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.renderService
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.rpcService
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Icons
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.project.DumbAwareAction
 
-class ProjectHideAction : AbstractToggleAction({ project -> project.settings.show }, shown, hidden) {
-    companion object {
-        val hidden = View {
-            text = "Show project in Rich Presence"
-            // description = ""
-            icon = Icons.DISCORD_WHITE
-            hoveredIcon = Icons.DISCORD_BLURPLE
-        }
-
-        val shown = View {
-            text = "Hide project in Rich Presence"
-            // description = ""
+class ReconnectAction : DumbAwareAction() {
+    init {
+        templatePresentation.apply {
             icon = Icons.DISCORD_BLURPLE
-            hoveredIcon = Icons.DISCORD_WHITE
+            text = "Force reconnect to Discord"
         }
+    }
+
+    override fun actionPerformed(e: AnActionEvent) {
+        rpcService.update(null)
+
+        renderService.render(true)
     }
 }

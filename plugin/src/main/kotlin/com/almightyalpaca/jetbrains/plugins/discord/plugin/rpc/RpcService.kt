@@ -20,7 +20,7 @@ import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.connection.Native
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.connection.RpcConnection
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.DisposableCoroutineScope
 import com.intellij.openapi.components.Service
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -28,7 +28,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 val rpcService: RpcService
-get() = service()
+    get() = service()
 
 @Service
 class RpcService : DisposableCoroutineScope {
@@ -66,8 +66,8 @@ class RpcService : DisposableCoroutineScope {
     fun update(presence: RichPresence?) = update(presence, forceUpdate = false, forceReconnect = false)
 
     @Synchronized
-    private fun update(presence: RichPresence?, forceUpdate: Boolean = false, forceReconnect: Boolean = false) {
-        if (Disposer.isDisposed(this) || !forceUpdate && !forceReconnect && lastPresence == presence) {
+    fun update(presence: RichPresence?, forceUpdate: Boolean = false, forceReconnect: Boolean = false) {
+        if (Disposer.isDisposed(this) || (!forceUpdate && !forceReconnect && lastPresence == presence)) {
             return
         }
 
@@ -90,8 +90,8 @@ class RpcService : DisposableCoroutineScope {
                 }
 
                 connection = NativeRpcConnection(presence.appId) { user -> onReady(user) }.apply {
-                    connect()
                     Disposer.register(this@RpcService, this@apply)
+                    connect()
                 }
                 connectionChecker = checkConnected()
 
@@ -102,7 +102,7 @@ class RpcService : DisposableCoroutineScope {
     }
 
     override fun dispose() {
-        rpcService.update(null)
+        update(null)
 
         super.dispose()
     }

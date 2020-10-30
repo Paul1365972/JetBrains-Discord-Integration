@@ -15,8 +15,8 @@
   -->
 
 <idea-plugin>
-    <id>com.almightyalpaca.intellij.plugins.discord</id>
-    <name>Discord Integration</name>
+    <id>io.github.paul1365972.intellij.plugins.discord</id>
+    <name>Discord Integration (Custom)</name>
     <vendor email="aljoschagrebe@gmail.com" url="https://github.com/Almighty-Alpaca">Almighty Alpaca, modified by Paul1365972</vendor>
 
     <idea-version since-build="201.4515.24"/>

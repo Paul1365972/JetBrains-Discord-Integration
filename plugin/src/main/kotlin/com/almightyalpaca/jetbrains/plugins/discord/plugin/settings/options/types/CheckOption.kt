@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,16 @@ import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.impl
 import com.intellij.ui.components.JBCheckBox
 import javax.swing.JComponent
 
-fun OptionCreator<in Boolean>.check(description: String, initialValue: Boolean, enabled: Boolean = true) =
-    OptionProviderImpl(this, CheckOption(description, initialValue, enabled))
+fun OptionCreator<in Boolean>.check(text: String, description: String? = null, initialValue: Boolean, enabled: Boolean = true) =
+    OptionProviderImpl(this, CheckOption(text, description, initialValue, enabled))
 
-class CheckOption(description: String, initialValue: Boolean, private val enabled: Boolean) :
-    SimpleOption<Boolean>(description, initialValue) {
+fun OptionCreator<in Boolean>.check(text: String, initialValue: Boolean, enabled: Boolean = true) =
+    OptionProviderImpl(this, CheckOption(text, null, initialValue, enabled))
+
+class CheckOption(text: String, description: String?, initialValue: Boolean, private val enabled: Boolean) :
+    SimpleOption<Boolean>(text, description, initialValue) {
     override val componentImpl by lazy {
-        JBCheckBox(description, currentValue).apply {
+        JBCheckBox(text, currentValue).apply {
             this.isEnabled = enabled
         }
     }
@@ -65,6 +68,4 @@ class CheckOption(description: String, initialValue: Boolean, private val enable
 
 typealias BooleanValue = SimpleValue<Boolean>
 
-fun BooleanValue.toggle() {
-    set(!get())
-}
+fun BooleanValue.toggle() = updateStoredValue { !it }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,13 @@ interface OptionHolder : OptionCreator<Any?>, ComponentProvider {
     }
 
     var isComponentEnabled: Boolean
-        get() = component.isEnabled
+        get() = component?.isEnabled ?: true
         set(value) {
-            component.isEnabled = value
-            for (component in component.components) {
-                component.isEnabled = value
+            component?.let { c ->
+                c.isEnabled = value
+                for (component in c.components) {
+                    component.isEnabled = value
+                }
             }
         }
 

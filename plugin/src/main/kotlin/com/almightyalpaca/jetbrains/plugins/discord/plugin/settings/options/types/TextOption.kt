@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,26 +23,31 @@ import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.label
 import com.intellij.ui.components.JBTextField
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
+import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
-fun OptionCreator<in String>.text(description: String, initialValue: String, charLimit: Int = 0) = OptionProviderImpl(this, TextOption(description, initialValue, charLimit))
+fun OptionCreator<in String>.text(text: String, description: String? = null, initialValue: String, charLimit: Int = 0) =
+    OptionProviderImpl(this, TextOption(text, description, initialValue, charLimit))
 
-class TextOption(description: String, initialValue: String, private val charLimit: Int) : SimpleOption<String>(description, initialValue) {
+fun OptionCreator<in String>.text(text: String, initialValue: String, charLimit: Int = 0) =
+    OptionProviderImpl(this, TextOption(text, null, initialValue, charLimit))
+
+class TextOption(text: String, description: String?, initialValue: String, private val charLimit: Int) : SimpleOption<String>(text, description, initialValue) {
     override val componentImpl by lazy {
         JBTextField().apply {
             // TODO: text field width
             // columns = charLimit
-            text = currentValue
+            this.text = currentValue
         }
     }
 
-    override val component by lazy {
+    override val component: JComponent by lazy {
         JPanel().apply {
             layout = GridBagLayout()
 
-            add(label(description), gbc {
+            add(label(text), gbc {
                 gridx = 0
                 gridy = 0
                 gridwidth = 1

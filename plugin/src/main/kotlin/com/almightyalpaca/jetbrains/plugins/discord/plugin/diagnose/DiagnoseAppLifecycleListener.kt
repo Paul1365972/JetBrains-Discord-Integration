@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,17 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.diagnose
 
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.DiscordPlugin
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.ApplicationType
 import com.intellij.ide.AppLifecycleListener
 import com.intellij.openapi.project.Project
 
 class DiagnoseAppLifecycleListener : AppLifecycleListener {
     override fun appStarting(projectFromCommandLine: Project?) {
+        DiscordPlugin.LOG.info("App starting, diagnosing environment")
+
+        DiscordPlugin.LOG.debug("Application identifiers: ${ApplicationType.IDE.applicationName}, ${ApplicationType.IDE_EDITION.applicationName}")
+
         diagnoseService.discord
         diagnoseService.plugins
         diagnoseService.ide

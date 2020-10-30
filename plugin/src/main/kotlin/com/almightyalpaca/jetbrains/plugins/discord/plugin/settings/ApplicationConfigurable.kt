@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.diagnose.DiagnoseService
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.diagnose.diagnoseService
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.renderService
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.time.timeService
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.createErrorMessage
 import com.intellij.openapi.options.SearchableConfigurable
 import kotlinx.coroutines.future.asCompletableFuture
@@ -35,6 +36,8 @@ class ApplicationConfigurable : SearchableConfigurable {
 
     override fun apply() {
         settings.apply()
+
+        timeService.load()
 
         renderService.render()
     }
@@ -61,7 +64,7 @@ class ApplicationConfigurable : SearchableConfigurable {
         }
 
         service.ide.asCompletableFuture().thenAcceptAsync { ide ->
-            if (ide != DiagnoseService.IDE.OTHER) {
+            if (ide != DiagnoseService.Ide.OTHER) {
                 SwingUtilities.invokeLater { add(createErrorMessage(ide.message), 0) }
             }
         }

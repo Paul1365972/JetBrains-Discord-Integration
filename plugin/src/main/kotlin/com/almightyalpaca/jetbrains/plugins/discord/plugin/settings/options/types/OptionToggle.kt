@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.jdom.Element
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.Box
+import javax.swing.JComponent
 import javax.swing.JPanel
 import kotlin.reflect.KProperty
 
@@ -49,7 +50,7 @@ class OptionToggle<T>(private val enabled: Boolean) : Option<Toggle<T>>(""), Tog
     private val value = Toggle(this)
     override fun getValue(thisRef: OptionHolder, property: KProperty<*>) = value
 
-    override val component by lazy {
+    override val component: JComponent? by lazy {
         JPanel().apply panel@{
             layout = GridBagLayout()
 
@@ -57,7 +58,7 @@ class OptionToggle<T>(private val enabled: Boolean) : Option<Toggle<T>>(""), Tog
             val optionComponent = option.second.component
 
             if (enabled)
-                toggle.second.addChangeListener { value -> option.second.isComponentEnabled = toggle.third(value) }
+                toggle.second.addChangeListener { value -> option.second.isComponentEnabled = isComponentEnabled && toggle.third(value) }
 
             add(toggleComponent, gbc {
                 gridx = 0
@@ -96,7 +97,7 @@ class OptionToggle<T>(private val enabled: Boolean) : Option<Toggle<T>>(""), Tog
             field = value
 
             toggle.second.isComponentEnabled = value
-            option.second.isComponentEnabled = value
+            option.second.isComponentEnabled = value && toggle.third(toggle.second.componentValue)
         }
 
     override fun addChangeListener(listener: (Toggle<T>) -> Unit) =

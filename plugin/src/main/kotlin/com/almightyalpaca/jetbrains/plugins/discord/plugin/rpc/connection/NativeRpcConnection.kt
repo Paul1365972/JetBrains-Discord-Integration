@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,11 @@ import club.minnced.discord.rpc.DiscordEventHandlers.OnStatus
 import club.minnced.discord.rpc.DiscordRPC
 import club.minnced.discord.rpc.DiscordRichPresence
 import club.minnced.discord.rpc.DiscordUser
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.DiscordPlugin
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.RichPresence
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.User
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.DisposableCoroutineScope
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.scheduleWithFixedDelay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
@@ -36,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 private var CONNECTED: AtomicReference<NativeRpcConnection?> = AtomicReference(null)
 
-class NativeRpcConnection(override val appId: Long, private val userCallback: (User) -> Unit) : DiscordEventHandlers(),
+class NativeRpcConnection(override val appId: Long, private val userCallback: (User?) -> Unit) : DiscordEventHandlers(),
     RpcConnection, DisposableCoroutineScope {
     override val parentJob: Job = SupervisorJob()
 
@@ -46,12 +48,16 @@ class NativeRpcConnection(override val appId: Long, private val userCallback: (U
 
     init {
         ready = OnReady { user ->
+            DiscordPlugin.LOG.info("Rpc connected, user: ${user.username}#${user.discriminator}")
+
             running = true
             userCallback(user.toGeneric())
         }
         disconnected = OnStatus { _, _ ->
+            DiscordPlugin.LOG.info("Rpc disconnected")
+
             running = false
-            userCallback(User.CLYDE)
+            userCallback(null)
         }
     }
 
@@ -60,23 +66,37 @@ class NativeRpcConnection(override val appId: Long, private val userCallback: (U
 
     @Synchronized
     override fun connect() {
-        if (!CONNECTED.compareAndSet(null, this)) {
-            throw IllegalStateException("There can only be one connected RPC connection")
-        }
+        DiscordPlugin.LOG.info("Starting new rpc connection")
 
         if (DiscordRPC.INSTANCE == null) {
-            throw IllegalStateException("DiscordRPC has been unloaded")
+            DiscordPlugin.LOG.error("DiscordRPC library isn't loaded")
+            throw IllegalStateException("DiscordRPC isn't loaded")
+        }
+
+        if (!CONNECTED.compareAndSet(null, this)) {
+            DiscordPlugin.LOG.error("Another rpc connection is already running")
+            throw IllegalStateException("Another rpc connection is already running")
         }
 
         DiscordRPC.INSTANCE.Discord_Initialize(appId.toString(), this, false, null)
 
         callbackRunner = Executors.newSingleThreadScheduledExecutor()
-        callbackRunner.scheduleAtFixedRate(DiscordRPC.INSTANCE::Discord_RunCallbacks, 2, 2, TimeUnit.SECONDS)
+        callbackRunner.scheduleWithFixedDelay(delay = 2, unit = TimeUnit.SECONDS, command = this::runCallbacks)
+    }
+
+    private fun runCallbacks() {
+        DiscordPlugin.LOG.debug("Running rpc callbacks")
+
+        DiscordRPC.INSTANCE.Discord_RunCallbacks()
     }
 
     @Synchronized
     override fun send(presence: RichPresence?) {
+        DiscordPlugin.LOG.info("Sending new presence")
+
         if (CONNECTED.get() != this) {
+            DiscordPlugin.LOG.error("Can't send presence to inactive connection")
+
             return
         }
 
@@ -94,6 +114,8 @@ class NativeRpcConnection(override val appId: Long, private val userCallback: (U
 
     @Synchronized
     override fun disconnect() {
+        DiscordPlugin.LOG.info("Stopping rpc connection")
+
         if (CONNECTED.get() != this) {
             return
         }

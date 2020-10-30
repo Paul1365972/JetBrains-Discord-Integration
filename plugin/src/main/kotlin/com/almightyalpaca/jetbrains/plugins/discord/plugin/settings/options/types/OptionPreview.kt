@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types
 
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.gui.preview.JPreview
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.Renderer
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.gui.preview.JPreview
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.OptionCreator
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.OptionHolder
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.impl.OptionProviderImpl
@@ -28,6 +28,7 @@ import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.Box
 import javax.swing.BoxLayout
+import javax.swing.JComponent
 import javax.swing.JPanel
 import kotlin.reflect.KProperty
 
@@ -48,7 +49,7 @@ class OptionPreview : Option<Preview>(""), OptionCreator<Tabs>, Preview.Provider
         tabsOption = option
     }
 
-    override val component by lazy {
+    override val component: JComponent? by lazy {
         JPanel().apply panel@{
             // layout = BoxLayout(this@panel, BoxLayout.X_AXIS)
             layout = GridBagLayout()
@@ -86,10 +87,10 @@ class OptionPreview : Option<Preview>(""), OptionCreator<Tabs>, Preview.Provider
 
             tabsOption.addChangeListener { tabs ->
                 previewImpl.type = when (tabs.selected) {
-                    0 -> Renderer.Type.APPLICATION
-                    1 -> Renderer.Type.PROJECT
-                    2 -> Renderer.Type.FILE
-                    else -> Renderer.Type.APPLICATION // TODO: should never happen but nevertheless handled better
+                    0 -> Renderer.Type.Application
+                    1 -> Renderer.Type.Project
+                    2 -> Renderer.Type.File
+                    else -> Renderer.Type.Application // should never happen
                 }
             }
         }

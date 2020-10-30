@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,23 @@
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values
 
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.SimpleValue
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.ToolTipProvider
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.UiValueType
 import com.intellij.openapi.application.ApplicationNamesInfo
+import java.util.*
 
 typealias ApplicationTypeValue = SimpleValue<ApplicationType>
 
-enum class ApplicationType(val description: String, override val toolTip: String? = null) : ToolTipProvider {
+enum class ApplicationType(override val text: String, override val description: String? = null) : UiValueType {
     JETBRAINS("JetBrains IDE") {
         override val applicationNameReadable = "JetBrains IDE"
     },
-    IDE("IDE Name", toolTip = "e.g. IntelliJ IDEA") {
+    IDE("IDE Name", description = "e.g. IntelliJ IDEA") {
         override val applicationNameReadable: String by lazy {
             ApplicationNamesInfo.getInstance()
                 .fullProductName
         }
     },
-    IDE_EDITION("IDE Name and Edition", toolTip = """e.g. IntelliJ IDEA Ultimate""""") {
+    IDE_EDITION("IDE Name and Edition", description = "e.g. IntelliJ IDEA Ultimate") {
         override val applicationNameReadable: String by lazy {
             ApplicationNamesInfo.getInstance()
                 .fullProductNameWithEdition
@@ -46,9 +47,7 @@ enum class ApplicationType(val description: String, override val toolTip: String
     val applicationName by lazy {
         applicationNameReadable.split(' ')
             .asSequence()
-            .map(String::toLowerCase)
+            .map { it.toLowerCase(Locale.ENGLISH) }
             .joinToString(separator = "_")
     }
-
-    override fun toString() = description
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,10 @@ class ApplicationRenderer(context: RenderContext) : Renderer(context) {
         stateCustom = settings.applicationStateCustom,
         largeIcon = settings.applicationIconLarge,
         largeIconText = settings.applicationIconLargeText,
+        largeIconTextCustom = settings.applicationIconLargeTextCustom,
         smallIcon = settings.applicationIconSmall,
         smallIconText = settings.applicationIconSmallText,
+        smallIconTextCustom = settings.applicationIconSmallTextCustom,
         startTimestamp = settings.applicationTime,
         timestampCustom = settings.timeCustom,
         timestampOverride = settings.timeOverride

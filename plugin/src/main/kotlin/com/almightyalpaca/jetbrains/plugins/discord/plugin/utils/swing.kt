@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import java.awt.Color
 import java.awt.GridBagConstraints
-import javax.swing.Box
-import javax.swing.BoxLayout
-import javax.swing.JComponent
-import javax.swing.JPanel
+import javax.swing.*
 
 inline fun gbc(block: (GridBagConstraints.() -> Unit)): GridBagConstraints = GridBagConstraints().apply(block)
 
@@ -44,3 +41,5 @@ fun createErrorMessage(message: String): JComponent = JPanel().apply warning@{
 fun label(text: String): JComponent = JBLabel(text).apply {
     border = JBUI.Borders.emptyRight(10)
 }
+
+operator fun <T> DefaultComboBoxModel<T>.contains(o: Any?) = getIndexOf(o) != -1

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,38 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.utils
 
-import org.jetbrains.concurrency.Promise
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runReadAction
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
+import javax.swing.SwingUtilities
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-suspend fun <T> Promise<T>.toSuspendFunction(): T? = suspendCoroutine { continuation ->
-    onError(continuation::resumeWithException)
-    onProcessed(continuation::resume)
+fun ScheduledExecutorService.scheduleWithFixedDelay(delay: Long, initialDelay: Long = delay, unit: TimeUnit, command: () -> Unit): ScheduledFuture<*> =
+    scheduleWithFixedDelay(Runnable(command), initialDelay, delay, unit)
+
+suspend fun <T> invokeOnEventThread(runnable: () -> T): T = when {
+    ApplicationManager.getApplication()?.isDispatchThread != false && SwingUtilities.isEventDispatchThread() -> runnable()
+    else -> suspendCoroutine { continuation ->
+        SwingUtilities.invokeLater {
+            try {
+                continuation.resume(runnable())
+            } catch (e: Exception) {
+                continuation.resumeWithException(e)
+            }
+        }
+    }
+}
+
+suspend fun <T> invokeReadAction(runnable: () -> T): T = suspendCoroutine { continuation ->
+    runReadAction {
+        try {
+            continuation.resume(runnable())
+        } catch (e: Exception) {
+            continuation.resumeWithException(e)
+        }
+    }
 }

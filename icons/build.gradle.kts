@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,152 +14,69 @@
  * limitations under the License.
  */
 
-import java.net.URI
-
 plugins {
     kotlin("jvm")
-}
-
-version = "1.0.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
-    jcenter()
-    maven { url = URI("https://kotlin.bintray.com/kotlinx") }
+    fileIndices
 }
 
 dependencies {
     val versionCoroutines: String by project
     val versionCommonsIo: String by project
-    val versionCommonsText: String by project
     val versionJackson: String by project
-    val versionKtor: String by project
-    val versionOkHttp: String by project
 
-    implementation(project(":shared"))
+    implementation(kotlin(module = "stdlib"))
 
-    implementation(kotlin("stdlib"))
+    implementation(platform(kotlinx("coroutines-bom", versionCoroutines)))
+    implementation(kotlinx("coroutines-core"))
 
-    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:$versionCoroutines"))
-    implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core")
-
-    implementation(platform("io.ktor:ktor-bom:$versionKtor"))
-    implementation(group = "io.ktor", name = "ktor-client-okhttp")
-    implementation(group = "io.ktor", name = "ktor-client-auth-jvm")
-    implementation(group = "io.ktor", name = "ktor-client-core-jvm")
-    implementation(group = "io.ktor", name = "ktor-http-jvm")
-    implementation(group = "io.ktor", name = "ktor-utils-jvm")
-    implementation(group = "io.ktor", name = "ktor-io-jvm")
-
-    implementation(group = "com.squareup.okhttp3", name = "okhttp", version = versionOkHttp)
-
-    implementation(group = "org.apache.commons", name = "commons-text", version = versionCommonsText)
     implementation(group = "commons-io", name = "commons-io", version = versionCommonsIo)
 
     implementation(platform("com.fasterxml.jackson:jackson-bom:$versionJackson"))
+    implementation(group = "com.fasterxml.jackson.core", name = "jackson-core")
     implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind")
+    implementation(group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml")
 }
 
 tasks {
+    generateFileIndices {
+        paths += "discord/applications"
+        paths += "discord/languages"
+        paths += "discord/themes"
+    }
+
     checkImplicitDependencies {
         ignore("org.jetbrains", "annotations")
     }
 
-    val graphsDot by registering(JavaExec::class) task@{
-        sourceSets.main.configure { this@task.classpath = runtimeClasspath }
-        main = "com.almightyalpaca.jetbrains.plugins.discord.icons.graphs.GraphsKt"
-    }
-
-    create("graphs") {
+    val generateIcons = create("generate-icons") {
         group = "icons"
-
-        dependsOn(graphsDot)
-
-        doLast {
-            val files = project.file("build/graphs").listFiles()!!
-                .filter { f -> f.isFile }
-                .map { f -> f.nameWithoutExtension }
-            for (file in files) {
-                exec {
-                    workingDir = file("build/graphs")
-                    commandLine = listOf("dot", "-Tpng", "$file.dot", "-o", "$file.png")
-                }
-            }
-        }
     }
 
-    val checkLanguages by registering(JavaExec::class) task@{
-        group = "verification"
-
-        sourceSets.main.configure { this@task.classpath = runtimeClasspath }
-        main = "com.almightyalpaca.jetbrains.plugins.discord.icons.validator.LanguageValidatorKt"
+    val generateMaterialApplicationIcons = create<Exec>("generate-material-application-icons") {
+        workingDir(project.file("src/main/resources/discord/applications/material"))
+        commandLine = listOf(
+            "magick",
+            "mogrify",
+            "-resize",
+            "800x800",
+            "-gravity",
+            "center",
+            "-bordercolor",
+            "\"#23272A\"",
+            "-border",
+            "112x112",
+            "-path",
+            ".",
+            "../*.png"
+        )
     }
 
-    val checkIcons by registering(JavaExec::class) task@{
-        group = "verification"
-
-        sourceSets.main.configure { this@task.classpath = runtimeClasspath }
-        main = "com.almightyalpaca.jetbrains.plugins.discord.icons.validator.IconValidatorKt"
+    val deleteMaterialApplicationIcons = create<Delete>("delete-material-application-icons") {
+        delete(fileTree("src/main/resources/discord/applications/material/") {
+            include("*.png")
+        })
     }
 
-    check {
-        dependsOn(checkLanguages)
-        dependsOn(checkIcons)
-    }
-
-    create<JavaExec>("checkUnusedIcons") task@{
-        group = "verification"
-
-        sourceSets.main.configure { this@task.classpath = runtimeClasspath }
-        main = "com.almightyalpaca.jetbrains.plugins.discord.icons.find.UnusedIconFinderKt"
-    }
-
-    fun Task.checkTokens() {
-        if (!project.extra.has("DISCORD_TOKEN") || !project.extra.has("BINTRAY_KEY")) {
-            enabled = false
-        }
-    }
-
-    val uploadIcons by registering(JavaExec::class) task@{
-        group = "icons"
-
-        dependsOn(checkIcons)
-        checkTokens()
-
-        sourceSets.main.configure { this@task.classpath = runtimeClasspath }
-        main = "com.almightyalpaca.jetbrains.plugins.discord.icons.uploader.DiscordUploaderKt"
-
-        if ("DISCORD_TOKEN" in project.extra) {
-            environment("DISCORD_TOKEN", project.extra["DISCORD_TOKEN"] as String)
-        } else {
-            enabled = false
-        }
-    }
-
-    val uploadLanguages by registering(JavaExec::class) task@{
-        group = "icons"
-
-        dependsOn(checkLanguages)
-        checkTokens()
-
-        sourceSets.main.configure { this@task.classpath = runtimeClasspath }
-        main = "com.almightyalpaca.jetbrains.plugins.discord.icons.uploader.BintrayUploaderKt"
-
-        if ("BINTRAY_KEY" in project.extra) {
-            environment("BINTRAY_KEY", project.extra["BINTRAY_KEY"] as String)
-        } else {
-            enabled = false
-        }
-    }
-
-    create("upload") {
-        group = "icons"
-
-        dependsOn(check)
-
-        dependsOn(uploadLanguages)
-        dependsOn(uploadIcons)
-    }
+    generateIcons.dependsOn(generateMaterialApplicationIcons)
+    generateMaterialApplicationIcons.dependsOn(deleteMaterialApplicationIcons)
 }
-
-operator fun ExtraPropertiesExtension.contains(key: String) = has(key)

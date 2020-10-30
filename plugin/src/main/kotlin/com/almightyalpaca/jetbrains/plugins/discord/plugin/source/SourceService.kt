@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.source
 
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.Source
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.classpath.ClasspathSource
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.local.LocalSource
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.source.bintray.BintraySource
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.Source
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.local.LocalSource
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import java.nio.file.Paths
@@ -31,12 +32,15 @@ class SourceService {
     val source: Source
 
     init {
-        val icons: String? = System.getenv("com.almightyalpaca.jetbrains.plugins.discord.plugin.source")
-        val (platform, location) = icons?.split(':', limit = 2) ?: listOf("", "")
+        val env = System.getenv("com.almightyalpaca.jetbrains.plugins.discord.plugin.source")?.split(':', limit = 2) ?: listOf("")
+        val platform = env[0]
+        val location = env.getOrNull(1)
+
         source = when (platform.toLowerCase()) {
-            "bintray" -> BintraySource(location)
-            "local" -> LocalSource(Paths.get(location))
-            else -> BintraySource("almightyalpaca/JetBrains-Discord-Integration/Icons")
+            "bintray" -> BintraySource(location ?: "almightyalpaca/JetBrains-Discord-Integration/Icons")
+            "local" -> LocalSource(Paths.get(location ?: throw IllegalStateException("LocalSource needs a path")))
+            "classpath" -> ClasspathSource(location ?: "discord")
+            else -> ClasspathSource("discord")
         }
     }
 }

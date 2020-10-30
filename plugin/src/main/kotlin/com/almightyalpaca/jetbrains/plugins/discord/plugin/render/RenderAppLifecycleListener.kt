@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,6 @@ import com.intellij.openapi.project.Project
 
 class RenderAppLifecycleListener : AppLifecycleListener {
     override fun appStarting(projectFromCommandLine: Project?) {
-        renderService.render()
+        renderService.startRenderClock()
     }
 }

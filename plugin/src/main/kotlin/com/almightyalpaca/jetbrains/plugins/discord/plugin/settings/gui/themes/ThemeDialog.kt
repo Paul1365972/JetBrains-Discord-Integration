@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.gui.themes
 
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.Theme
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.ThemeMap
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.Theme
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.ThemeMap
 import com.intellij.openapi.ui.DialogWrapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -71,10 +71,8 @@ class ThemeDialog(private val themes: ThemeMap, private val initialValue: String
             override fun getListCellRendererComponent(list: JList<*>?, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean): Component {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
 
-                val theme = (value as Theme)
+                val theme = value as Theme
                 text = "<html><b>${theme.name}</b><br>${theme.description}</html>"
-
-
 
                 return this
             }

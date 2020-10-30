@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.notifications
 
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.DiscordPlugin
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.renderService
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.settings
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.ProjectShow
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.DisposableCoroutineScope
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Plugin
 import com.intellij.openapi.project.Project
@@ -37,20 +39,31 @@ class NotificationStartupActivity : StartupActivity.Background, DisposableCorout
     }
 
     private fun checkUpdate() {
+        DiscordPlugin.LOG.info("Checking for plugin update")
+
         val version = Plugin.version
-        if (version != null && version.toString() != notificationSettings.lastUpdateNotification && version.isStable()) {
-            notificationSettings.lastUpdateNotification = version.toString()
+        if (version != null && version.toString() != settings.applicationLastUpdateNotification.getStoredValue() && version.isStable()) {
+            DiscordPlugin.LOG.info("Plugin update found, showing changelog")
+
+            settings.applicationLastUpdateNotification.setStoredValue(version.toString())
+
             launch { ApplicationUpdateNotification.show(version.toString()) }
         }
     }
 
     private suspend fun checkAskShowProject(project: Project) {
-        val settings = project.settings
-        val notificationSettings = project.notificationSettings
+        DiscordPlugin.LOG.info("Checking for project confirmation")
 
-        if (notificationSettings.askShowProject) {
-            settings.show.set(AskShowProjectNotification.show(project))
-            notificationSettings.askShowProject = false
+        val settings = project.settings
+
+        if (settings.show.getStoredValue() == ProjectShow.ASK) {
+            DiscordPlugin.LOG.info("Showing project confirmation dialog")
+
+            val result = ProjectShowNotification.show(project)
+
+            DiscordPlugin.LOG.info("Project confirmation result=$result")
+
+            settings.show.setStoredValue(result)
             renderService.render()
         }
     }

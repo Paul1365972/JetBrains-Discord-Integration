@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.source.bintray
 
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.*
-import com.almightyalpaca.jetbrains.plugins.discord.shared.utils.retryAsync
-import com.almightyalpaca.jetbrains.plugins.discord.shared.utils.toMap
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.*
+import com.almightyalpaca.jetbrains.plugins.discord.icons.utils.mapValue
+import com.almightyalpaca.jetbrains.plugins.discord.icons.utils.retryAsync
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.DiscordPlugin
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.debugLazy
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
@@ -55,7 +57,8 @@ class BintraySource(location: String) : Source, CoroutineScope {
         this.`package` = `package`
 
         val appConfigHash = Paths.get(PathManager.getConfigPath()).toAbsolutePath().toString().hashCode()
-        val cacheDir = Paths.get(FileUtils.getTempDirectoryPath(), "JetBrains-Discord-Integration/$appConfigHash/bintray")
+        val cacheDir =
+            Paths.get(FileUtils.getTempDirectoryPath(), "JetBrains-Discord-Integration/$appConfigHash/bintray")
         val cacheSize = 1024L * 1024L * 16L  // 16MiB
 
         val cache = Cache(cacheDir.toFile(), cacheSize)
@@ -75,21 +78,39 @@ class BintraySource(location: String) : Source, CoroutineScope {
             .build()
     }
 
-    private val versionJob: Deferred<String> = retryAsync { readVersion() }
-    private val filesJob: Deferred<Collection<String>> = retryAsync { readFiles() }
-    private val languageJob: Deferred<LanguageMap> = retryAsync { readLanguages() }
-    private val themeJob: Deferred<ThemeMap> = retryAsync { readThemes() }
+    private val versionJob: Deferred<String> = retryAsync(
+        log = { DiscordPlugin.LOG.error("Error getting Bintray version", it) },
+        block = { readVersion().also { DiscordPlugin.LOG.debugLazy { "Bintray version complete: $it" } } })
+    private val filesJob: Deferred<Collection<String>> = retryAsync(
+        log = { DiscordPlugin.LOG.error("Error getting Bintray files", it) },
+        block = { readFiles().also { DiscordPlugin.LOG.debugLazy { "Bintray files complete: $it" } } })
+    private val languageJob: Deferred<LanguageMap> = retryAsync(
+        log = { DiscordPlugin.LOG.error("Error getting Bintray languages", it) },
+        block = { readLanguages().also { DiscordPlugin.LOG.debugLazy { "Bintray languages complete: $it" } } })
+    private val themeJob: Deferred<ThemeMap> = retryAsync(
+        log = { DiscordPlugin.LOG.error("Error getting Bintray themes", it) },
+        block = { readThemes().also { DiscordPlugin.LOG.debugLazy { "Bintray themes complete: $it" } } })
+    private val applicationJob: Deferred<ApplicationMap> = retryAsync(
+        log = { DiscordPlugin.LOG.error("Error getting Bintray applications", it) },
+        block = { readApplications().also { DiscordPlugin.LOG.debugLazy { "Bintray applications complete: $it" } } })
 
     override fun getLanguagesAsync(): Deferred<LanguageMap> = languageJob
     override fun getThemesAsync(): Deferred<ThemeMap> = themeJob
+    override fun getApplicationsAsync(): Deferred<ApplicationMap> = applicationJob
 
-    private suspend fun readVersion() = get("https://bintray.com/api/v1/packages/$user/$repository/$`package`/versions/_latest") { body ->
-        ObjectMapper().readTree(body.byteStream())
-            .get("name")
-            .asText()
+    private suspend fun readVersion(): String {
+        DiscordPlugin.LOG.info("Getting Bintray repo version")
+
+        return get("https://bintray.com/api/v1/packages/$user/$repository/$`package`/versions/_latest") { body ->
+            ObjectMapper().readTree(body.byteStream())
+                .get("name")
+                .asText()
+        }
     }
 
     private suspend fun readFiles(): Collection<String> {
+        DiscordPlugin.LOG.info("Getting Bintray repo files")
+
         val version: String = versionJob.await()
 
         return get("https://bintray.com/api/v1/packages/$user/$repository/$`package`/versions/$version/files") { body ->
@@ -99,52 +120,29 @@ class BintraySource(location: String) : Source, CoroutineScope {
         }
     }
 
-    private suspend fun readLanguages(): LanguageMap = coroutineScope {
+    private suspend fun readLanguages() = BintrayLanguageSourceMap(read("languages", ::LanguageSource)).toLanguageMap()
+    private suspend fun readThemes() = BintrayThemeSourceMap(this, read("themes", ::ThemeSource)).toThemeMap()
+    private suspend fun readApplications() = BintrayApplicationSourceMap(read("applications", ::ApplicationSource)).toApplicationMap()
+
+    private suspend fun <T> read(type: String, factory: (String, JsonNode) -> T): Map<String, T> = coroutineScope {
+        DiscordPlugin.LOG.info("Getting Bintray repo $type")
+
         val mapper = ObjectMapper(YAMLFactory())
 
-        val version = versionJob.await()
-        val files = filesJob.await()
-
-        val languageFiles = files.filter { path -> path.startsWith("languages") }
-
-        val map = languageFiles.stream()
+        filesJob.await()
+            .asSequence()
+            .filter { path -> path.startsWith(type) }
             .map { path ->
-                async {
-                    getFile(user, repository, `package`, version, path) { body ->
+                val id = FilenameUtils.getBaseName(path)
+                id to async {
+                    getFile(user, repository, `package`, versionJob.await(), path) { body ->
                         val node: JsonNode = mapper.readTree(body.string())
-                        LanguageSource(FilenameUtils.getBaseName(path).toLowerCase(), node)
+                        factory(id, node)
                     }
                 }
             }
-            .map { async -> async.asCompletableFuture().get() }
-            .map { p -> p.id to p }
+            .mapValue { it.asCompletableFuture().get() }
             .toMap()
-
-        BintrayLanguageSourceMap(map).toLanguageMap()
-    }
-
-    private suspend fun readThemes(): ThemeMap = coroutineScope {
-        val mapper = ObjectMapper(YAMLFactory())
-
-        val version = versionJob.await()
-        val files = filesJob.await()
-
-        val languageFiles = files.filter { path -> path.startsWith("themes") }
-
-        val map = languageFiles.stream()
-            .map { path ->
-                async {
-                    getFile(user, repository, `package`, version, path) { body ->
-                        val node: JsonNode = mapper.readTree(body.string())
-                        ThemeSource(FilenameUtils.getBaseName(path).toLowerCase(), node)
-                    }
-                }
-            }
-            .map { async -> async.asCompletableFuture().get() }
-            .map { p -> p.id to p }
-            .toMap()
-
-        BintrayThemeSourceMap(this@BintraySource, map).toThemeMap()
     }
 
     private suspend fun <T> get(url: String, handler: (ResponseBody) -> T) =
@@ -181,5 +179,4 @@ class BintraySource(location: String) : Source, CoroutineScope {
 
     private suspend fun <T> getFile(user: String, repository: String, `package`: String, version: String, path: String, handler: (ResponseBody) -> T) =
         get("https://dl.bintray.com/$user/$repository/$`package`/$version/$path", handler)
-
 }

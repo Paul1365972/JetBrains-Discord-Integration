@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,19 +27,12 @@ object ApplicationUpdateNotification {
         Enjoying this plugin? Having issues? Join our <a href="https://discord.gg/SvuyuMP">Discord</a> server for news and support.
         """.trimIndent()
 
-    private val group = NotificationGroup(
-        "${Plugin.getId()}.update",
-        NotificationDisplayType.STICKY_BALLOON,
-        true
-    )
+    private val group = NotificationGroup("${Plugin.getId()}.update", NotificationDisplayType.STICKY_BALLOON, true)
 
-    private fun getChangelog(): String =
-        ApplicationUpdateNotification::class.java.getResource("/discord/changes.html").readText()
+    private fun getChangelog(): String = ApplicationUpdateNotification::class.java.getResource("/discord/changes.html").readText()
 
-    fun show(version: String) = group.createNotification(
-        title(version),
-        content,
-        NotificationType.INFORMATION,
-        NotificationListener.UrlOpeningListener(false)
-    ).run(Notifications.Bus::notify)
+    fun show(version: String) =
+        group
+            .createNotification(title(version), content, NotificationType.INFORMATION, NotificationListener.UrlOpeningListener(false))
+            .run(Notifications.Bus::notify)
 }

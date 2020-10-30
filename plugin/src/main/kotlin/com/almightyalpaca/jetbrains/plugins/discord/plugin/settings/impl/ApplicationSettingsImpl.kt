@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,10 @@ package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.impl
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.ApplicationSettings
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.impl.PersistentStateOptionHolderImpl
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.*
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.*
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.ApplicationType
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.PresenceIcon
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.PresenceText
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.PresenceTime
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import java.time.OffsetDateTime
@@ -28,14 +31,14 @@ import java.time.temporal.ChronoUnit
 
 @State(name = "DiscordApplicationSettings", storages = [Storage("discord.xml")])
 class ApplicationSettingsImpl : ApplicationSettings, PersistentStateOptionHolderImpl() {
-    override val show by check("Show Rich Presence", true)
+    override val show by check("Enable Rich Presence", true)
 
     private val timeoutToggle by toggleable<Boolean>(false)
-    override val timeoutEnabled by timeoutToggle.toggle.check("Hide Rich Presence after inactivity (currently unavailable)", initialValue = true, enabled = false)
+    override val timeoutEnabled by timeoutToggle.toggle.check("Hide Rich Presence after inactivity", true)
 
     private val timeoutOptionPair by timeoutToggle.option.pair()
-    override val timeoutMinutes by timeoutOptionPair.first.spinner("Timeout", 5, 1..120, format = "# Minutes", enabled = false)
-    override val timeoutResetTimeEnabled by timeoutOptionPair.second.check("Reset open time", true, enabled = false)
+    override val timeoutMinutes by timeoutOptionPair.first.spinner("Timeout", 5, 1..120, format = "# Minutes")
+    override val timeoutResetTimeEnabled by timeoutOptionPair.second.check("Reset open time", true)
 
     override val timeOverride by check("Override Timestamp", false)
     override val timeCustom by text("Custom Timestamp", OffsetDateTime.now().toLocalDateTime().truncatedTo(ChronoUnit.SECONDS).toString().replace('T', ' '), 128)
@@ -48,21 +51,25 @@ class ApplicationSettingsImpl : ApplicationSettings, PersistentStateOptionHolder
 
     private val applicationTab = tabs["Application"]
 
-    private val applicationDetailsToggle by applicationTab.toggleable<PresenceLine>()
-    override val applicationDetails by applicationDetailsToggle.toggle { it == PresenceLine.CUSTOM }.selection("First line", PresenceLine.Application1)
-    override val applicationDetailsCustom by applicationDetailsToggle.option.text("Custom", "", 128)
+    private val applicationDetailsToggle by applicationTab.toggleable<PresenceText>()
+    override val applicationDetails by applicationDetailsToggle.toggle { it == PresenceText.CUSTOM }.selection("First line", PresenceText.Application1)
+    override val applicationDetailsCustom by applicationDetailsToggle.option.template("Custom", "")
 
-    private val applicationStateToggle by applicationTab.toggleable<PresenceLine>()
-    override val applicationState by applicationStateToggle.toggle { it == PresenceLine.CUSTOM }.selection("Second line", PresenceLine.Application2)
-    override val applicationStateCustom by applicationStateToggle.option.text("Custom", "", 128)
+    private val applicationStateToggle by applicationTab.toggleable<PresenceText>()
+    override val applicationState by applicationStateToggle.toggle { it == PresenceText.CUSTOM }.selection("Second line", PresenceText.Application2)
+    override val applicationStateCustom by applicationStateToggle.option.template("Custom", "")
 
     private val applicationIconLargeToggle by applicationTab.toggleable<PresenceIcon>()
     override val applicationIconLarge by applicationIconLargeToggle.disableOn(PresenceIcon.NONE).selection("Large icon", PresenceIcon.Large.Application)
-    override val applicationIconLargeText by applicationIconLargeToggle.option.selection("Text", PresenceIconText.Large.Application)
+    private val applicationIconLargeTextToggle by applicationIconLargeToggle.option.toggleable<PresenceText>()
+    override val applicationIconLargeText by applicationIconLargeTextToggle.enableOn(PresenceText.CUSTOM).selection("Text", PresenceText.ApplicationIconLarge)
+    override val applicationIconLargeTextCustom by applicationIconLargeTextToggle.option.template("Custom", "")
 
     private val applicationIconSmallToggle by applicationTab.toggleable<PresenceIcon>()
     override val applicationIconSmall by applicationIconSmallToggle.disableOn(PresenceIcon.NONE).selection("Small icon", PresenceIcon.Small.Application)
-    override val applicationIconSmallText by applicationIconSmallToggle.option.selection("Text", PresenceIconText.Small.Application)
+    private val applicationIconSmallTextToggle by applicationIconSmallToggle.option.toggleable<PresenceText>()
+    override val applicationIconSmallText by applicationIconSmallTextToggle.enableOn(PresenceText.CUSTOM).selection("Text", PresenceText.ApplicationIconSmall)
+    override val applicationIconSmallTextCustom by applicationIconSmallTextToggle.option.template("Custom", "")
 
     override val applicationTime by applicationTab.selection("Show elapsed time", PresenceTime.Application)
 
@@ -70,21 +77,25 @@ class ApplicationSettingsImpl : ApplicationSettings, PersistentStateOptionHolder
 
     private val projectTab = tabs["Project"]
 
-    private val projectDetailsToggle by projectTab.toggleable<PresenceLine>()
-    override val projectDetails by projectDetailsToggle.enableOn(PresenceLine.CUSTOM).selection("First line", PresenceLine.Project1)
-    override val projectDetailsCustom by projectDetailsToggle.option.text("Custom", "", 128)
+    private val projectDetailsToggle by projectTab.toggleable<PresenceText>()
+    override val projectDetails by projectDetailsToggle.enableOn(PresenceText.CUSTOM).selection("First line", PresenceText.Project1)
+    override val projectDetailsCustom by projectDetailsToggle.option.template("Custom", "")
 
-    private val projectStateToggle by projectTab.toggleable<PresenceLine>()
-    override val projectState by projectStateToggle.enableOn(PresenceLine.CUSTOM).selection("Second line", PresenceLine.Project2)
-    override val projectStateCustom by projectStateToggle.option.text("Custom", "", 128)
+    private val projectStateToggle by projectTab.toggleable<PresenceText>()
+    override val projectState by projectStateToggle.enableOn(PresenceText.CUSTOM).selection("Second line", PresenceText.Project2)
+    override val projectStateCustom by projectStateToggle.option.template("Custom", "")
 
     private val projectIconLargeToggle by projectTab.toggleable<PresenceIcon>()
     override val projectIconLarge by projectIconLargeToggle.disableOn(PresenceIcon.NONE).selection("Large icon", PresenceIcon.Large.Project)
-    override val projectIconLargeText by projectIconLargeToggle.option.selection("Text", PresenceIconText.Large.Project)
+    private val projectIconLargeTextToggle by projectIconLargeToggle.option.toggleable<PresenceText>()
+    override val projectIconLargeText by projectIconLargeTextToggle.enableOn(PresenceText.CUSTOM).selection("Text", PresenceText.ProjectIconLarge)
+    override val projectIconLargeTextCustom by projectIconLargeTextToggle.option.template("Custom", "")
 
     private val projectIconSmallToggle by projectTab.toggleable<PresenceIcon>()
     override val projectIconSmall by projectIconSmallToggle.disableOn(PresenceIcon.NONE).selection("Small icon", PresenceIcon.Small.Project)
-    override val projectIconSmallText by projectIconSmallToggle.option.selection("Text", PresenceIconText.Small.Project)
+    private val projectIconSmallTextToggle by projectIconSmallToggle.option.toggleable<PresenceText>()
+    override val projectIconSmallText by projectIconSmallTextToggle.enableOn(PresenceText.CUSTOM).selection("Text", PresenceText.ProjectIconSmall)
+    override val projectIconSmallTextCustom by projectIconSmallTextToggle.option.template("Custom", "")
 
     override val projectTime by projectTab.selection("Show elapsed time", PresenceTime.Project)
 
@@ -92,29 +103,38 @@ class ApplicationSettingsImpl : ApplicationSettings, PersistentStateOptionHolder
 
     private val fileTab = tabs["File"]
 
-    private val fileDetailsToggle by fileTab.toggleable<PresenceLine>()
-    override val fileDetails by fileDetailsToggle.enableOn(PresenceLine.CUSTOM).selection("First line", PresenceLine.File1)
-    override val fileDetailsCustom by fileDetailsToggle.option.text("Custom", "", 128)
+    private val fileDetailsToggle by fileTab.toggleable<PresenceText>()
+    override val fileDetails by fileDetailsToggle.enableOn(PresenceText.CUSTOM).selection("First line", PresenceText.File1)
+    override val fileDetailsCustom by fileDetailsToggle.option.template("Custom", "")
 
-    private val fileStateToggle by fileTab.toggleable<PresenceLine>()
-    override val fileState by fileStateToggle.enableOn(PresenceLine.CUSTOM).selection("Second line", PresenceLine.File2)
-    override val fileStateCustom by fileStateToggle.option.text("Custom", "", 128)
+    private val fileStateToggle by fileTab.toggleable<PresenceText>()
+    override val fileState by fileStateToggle.enableOn(PresenceText.CUSTOM).selection("Second line", PresenceText.File2)
+    override val fileStateCustom by fileStateToggle.option.template("Custom", "")
 
     private val fileIconLargeToggle by fileTab.toggleable<PresenceIcon>()
     override val fileIconLarge by fileIconLargeToggle.disableOn(PresenceIcon.NONE).selection("Large icon", PresenceIcon.Large.File)
-    override val fileIconLargeText by fileIconLargeToggle.option.selection("Text", PresenceIconText.Large.File)
+    private val fileIconLargeTextToggle by fileIconLargeToggle.option.toggleable<PresenceText>()
+    override val fileIconLargeText by fileIconLargeTextToggle.enableOn(PresenceText.CUSTOM).selection("Text", PresenceText.FileIconLarge)
+    override val fileIconLargeTextCustom by fileIconLargeTextToggle.option.template("Custom", "")
 
     private val fileIconSmallToggle by fileTab.toggleable<PresenceIcon>()
     override val fileIconSmall by fileIconSmallToggle.disableOn(PresenceIcon.NONE).selection("Small icon", PresenceIcon.Small.File)
-    override val fileIconSmallText by fileIconSmallToggle.option.selection("Text", PresenceIconText.Small.File)
+    private val fileIconSmallTextToggle by fileIconSmallToggle.option.toggleable<PresenceText>()
+    override val fileIconSmallText by fileIconSmallTextToggle.enableOn(PresenceText.CUSTOM).selection("Text", PresenceText.FileIconSmall)
+    override val fileIconSmallTextCustom by fileIconSmallTextToggle.option.template("Custom", "")
 
     override val fileTime by fileTab.selection("Show elapsed time", PresenceTime.File)
 
     override val filePrefixEnabled by fileTab.check("Prefix files names with Reading/Editing", true)
 
+    override val fileHideVcsIgnored by fileTab.check("Hide VCS ignored files", false)
+
     override val applicationType by selection("Application name", ApplicationType.IDE_EDITION)
     override val theme by themeChooser("Theme")
 
-    private val newProject by group("Settings for new projects")
-    override val newProjectShow by newProject.selection("Show new projects in Rich Presence", NewProjectShow.ASK)
+    /* ---------- Hidden Settings ---------- */
+
+    private val hidden by hidden()
+
+    override val applicationLastUpdateNotification by hidden.text("<unused>", "")
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.source.bintray
 
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.Icon
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.IconSet
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.abstract.AbstractLanguageMatch
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.Icon
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.IconSet
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.abstract.AbstractLanguageMatch
 
 class BintrayLanguageMatch(name: String, assetIds: Iterable<String>) : AbstractLanguageMatch(name, assetIds) {
     override fun findIcon(icons: IconSet): Icon? = when (icons) {

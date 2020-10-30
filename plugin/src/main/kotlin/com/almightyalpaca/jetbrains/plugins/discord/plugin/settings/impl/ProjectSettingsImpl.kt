@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,20 @@ package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.impl
 
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.ProjectSettings
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.impl.PersistentStateOptionHolderImpl
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.check
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.text
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.toggle
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.toggleable
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.*
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.settings
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.NewProjectShow
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.ProjectShow
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 
 @State(name = "DiscordProjectSettings", storages = [Storage("discord.xml")])
 class ProjectSettingsImpl(override val project: Project) : ProjectSettings, PersistentStateOptionHolderImpl() {
-    override val show by check("Show this project in Rich Presence", settings.newProjectShow.get() == NewProjectShow.SHOW)
+    override val show by when (project.isDefault) {
+        true -> selection("Project visibility", ProjectShow.ASK to ProjectShow.VALUES_DEFAULT)
+        false -> selection("Project visibility", ProjectManager.getInstance().defaultProject.settings.show.getStoredValue() to ProjectShow.VALUES)
+    }
 
     private val nameOverrideToggle by toggleable<Boolean>()
     override val nameOverrideEnabled by nameOverrideToggle.toggle.check("Override project name", false)

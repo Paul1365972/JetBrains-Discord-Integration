@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,10 @@ class JPreview : JLabel(), CoroutineScope {
 
     private val preview = PreviewRenderer()
 
-    var type: Renderer.Type
-        get() = preview.type
+    var type: Renderer.Type.Application = Renderer.Type.Application
         set(value) {
-            preview.type = value
+            field = value
             update()
-
         }
 
     private var updateJob: Job? = null
@@ -51,10 +49,12 @@ class JPreview : JLabel(), CoroutineScope {
         updateJob?.cancel()
 
         updateJob = launch {
-            val (modified, image) = preview.draw(force)
+            if (isShowing) {
+                val (modified, image) = preview.draw(type, force)
 
-            if (modified) {
-                icon = ImageIcon(image)
+                if (modified) {
+                    icon = ImageIcon(image)
+                }
             }
 
             updateJob = launch {

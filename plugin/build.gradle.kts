@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,30 @@
  * limitations under the License.
  */
 
+@file:Suppress("SuspiciousCollectionReassignment")
+
 import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jsoup.Jsoup
 
 plugins {
     kotlin("jvm")
     id("org.jetbrains.intellij")
     id("com.github.johnrengelman.shadow")
+    antlr
 }
 
 val github = "https://github.com/Almighty-Alpaca/JetBrains-Discord-Integration"
 
 dependencies {
+    val versionCommonsIo: String by project
     val versionJackson: String by project
     val versionOkHttp: String by project
     val versionRpc: String by project
-    val versionCommonsIo: String by project
+    val versionJUnit: String by project
+    val versionAntlr: String by project
 
-    implementation(project(":shared")) {
+    implementation(project(":icons")) {
         exclude(group = "org.slf4j", module = "slf4j-api")
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
@@ -47,16 +53,31 @@ dependencies {
 
     implementation(group = "commons-io", name = "commons-io", version = versionCommonsIo)
 
-    implementation(group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml",
-        version = versionJackson
-    )
+    implementation(group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml", version = versionJackson)
+
+    antlr("org.antlr", name = "antlr4", version = versionAntlr)
+
+    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = versionJUnit)
+    testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = versionJUnit)
+}
+
+val generatedSourceDir = project.file("src/generated")
+val generatedJavaSourceDir = generatedSourceDir.resolve("java")
+
+sourceSets {
+    main {
+        java {
+            srcDir(generatedJavaSourceDir)
+        }
+    }
 }
 
 val isCI by lazy { System.getenv("CI") != null }
 
 intellij {
-    // https://www.jetbrains.com/intellij-repository/releases
-    version = "2020.1"
+    val versionIde: String by project
+
+    version = versionIde
 
     downloadSources = !isCI
 
@@ -66,18 +87,10 @@ intellij {
 
     instrumentCode = false
 
-    // For testing with a custom theme
-    // setPlugins("com.chrisrm.idea.MaterialThemeUI:3.10.0")
+    setPlugins("git4idea")
 
-//    configureDefaultDependencies = false
-//
-//    afterEvaluate {
-//        project.dependencies {
-//            idea(files(ideaDependency.jarFiles.filter { f -> !f.name.matches(Regex("""(commons|kotlinx-coroutines).*""")) }))
-//            // TODO: fix when adding plugins
-//            // ideaPlugins(pluginDependencies.flatMap(PluginDependency::getJarFiles))
-//        }
-//    }
+    // For testing with a custom theme
+    // setPlugins("git4idea", "com.chrisrm.idea.MaterialThemeUI:3.10.0")
 }
 
 tasks {
@@ -90,20 +103,19 @@ tasks {
     }
 
     patchPluginXml {
-        changeNotes(readInfoFile(project.file("CHANGELOG.md")))
-        pluginDescription(readInfoFile(project.file("DESCRIPTION.md")))
+        changeNotes(readInfoFile(project.file("changelog.md")))
+        pluginDescription(readInfoFile(project.file("description.md")))
     }
 
     runIde {
-        // enable logging
-        environment["com.almightyalpaca.jetbrains.plugins.discord.plugin.logging"] = "true"
-
         // use local icons
-        environment["com.almightyalpaca.jetbrains.plugins.discord.plugin.source"] =
-            "local:${project(":icons").parent!!.projectDir.absolutePath}"
+        // environment["com.almightyalpaca.jetbrains.plugins.discord.plugin.source"] = "local:${project(":icons").parent!!.projectDir.absolutePath}"
 
         // use icons from specific bintray repo
-        // environment["com.almightyalpaca.jetbrains.plugins.discord.plugin.icons.source"] = "bintray:almightyalpaca/JetBrains-Discord-Integration/Icons"
+        // environment["com.almightyalpaca.jetbrains.plugins.discord.plugin.source"] = "bintray:almightyalpaca/JetBrains-Discord-Integration/Icons"
+
+        // use classpath icons
+        // environment["com.almightyalpaca.jetbrains.plugins.discord.plugin.source"] = "classpath:discord"
     }
 
     publishPlugin {
@@ -142,40 +154,50 @@ tasks {
 
         mergeServiceFiles()
 
-        prefix("org.yaml.snakeyaml")
-        prefix("org.scijava.nativelib")
-        prefix("org.newsclub") {
-            exclude("org.newsclub.net.unix.*")
-        }
-        prefix("org.kohsuke.github")
-        prefix("org.json")
-        prefix("org.jetbrains.annotations")
-        prefix("org.intellij.lang.annotations")
-        prefix("org.apache.logging.slf4j")
-        prefix("org.apache.logging.log4j")
-//        prefix("org.apache.commons.lang3")
-        prefix("org.apache.commons.io")
-        prefix("org.apache.commons.collections")
-        prefix("org.apache.commons.codec")
-        prefix("okio")
-        prefix("okhttp3")
-//        prefix("kotlinx.coroutines")
-//        prefix("kotlin")
-        prefix("com.jagrosh.discordipc")
-        prefix("com.fasterxml.jackson.dataformat.yaml")
-        prefix("com.fasterxml.jackson.databind")
-        prefix("com.fasterxml.jackson.core")
-        prefix("com.fasterxml.jackson.annotation")
         prefix("club.minnced.discord.rpc")
+        prefix("com.fasterxml.jackson.annotation")
+        prefix("com.fasterxml.jackson.core")
+        prefix("com.fasterxml.jackson.databind")
+        prefix("com.fasterxml.jackson.dataformat.yaml")
+        prefix("com.jagrosh.discordipc")
+        prefix("javassist")
+        prefix("okhttp3")
+        prefix("okio")
+        prefix("org.apache.commons.io")
+        prefix("org.yaml.snakeyaml")
+
+        val iconPaths = arrayOf(
+            Regex("""/?discord/applications/.*\.png"""),
+            Regex("""/?discord/themes/.*\.png""")
+        )
+
+        transform(PngOptimizingTransformer(128, *iconPaths))
+    }
+
+    withType<KotlinCompile> {
+        kotlinOptions {
+            freeCompilerArgs += "-Xuse-experimental=kotlin.Experimental"
+        }
     }
 
     withType<AbstractArchiveTask> {
         archiveBaseName.set("${rootProject.name}-${project.name.capitalize()}")
     }
 
+    generateGrammarSource {
+        val packageName = "com.almightyalpaca.jetbrains.plugins.discord.plugin.render.templates.antlr"
+
+        arguments = arguments + listOf("-package", packageName, "-no-listener")
+        outputDirectory = generatedJavaSourceDir.resolve(packageName.replace('.', File.separatorChar))
+    }
+
+    clean {
+        delete(generatedSourceDir)
+    }
+
     processResources {
         filesMatching("/discord/changes.html") {
-            val document = Jsoup.parse(readInfoFile(project.file("CHANGELOG.md")))
+            val document = Jsoup.parse(readInfoFile(project.file("changelog.md")))
             val body = document.getElementsByTag("body")[0]
             val list = body.getElementsByTag("ul")[0]
 
@@ -187,7 +209,7 @@ tasks {
         group = "markdown"
 
         doLast {
-            println(readInfoFile(project.file("CHANGELOG.md")))
+            println(readInfoFile(project.file("changelog.md")))
         }
     }
 
@@ -195,8 +217,18 @@ tasks {
         group = "markdown"
 
         doLast {
-            println(readInfoFile(project.file("DESCRIPTION.md")))
+            println(readInfoFile(project.file("description.md")))
         }
+    }
+
+    check {
+        dependsOn(":uploader:check")
+    }
+
+    test {
+        useJUnitPlatform()
+
+        maxHeapSize = "1G"
     }
 }
 

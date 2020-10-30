@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,26 +18,22 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.impl
 
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.OptionHolder
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.Option
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.gbc
-import org.jdom.Element
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.Box
+import javax.swing.JComponent
 import javax.swing.JPanel
 
 @Suppress("DEPRECATION")
-open class OptionHolderImpl : OptionHolder {
-    override val options = LinkedHashMap<String, Option<*>>()
-
-    override val component by lazy {
+open class OptionHolderImpl : HiddenOptionHolderImpl() {
+    override val component: JComponent? by lazy {
         JPanel().apply panel@{
             layout = GridBagLayout()
 
             var y = 0
             for (option in options.values) {
-                add(option.component, gbc {
+                add(option.component ?: continue, gbc {
                     gridx = 0
                     gridy = y++
                     gridwidth = 1
@@ -58,20 +54,6 @@ open class OptionHolderImpl : OptionHolder {
                 weightx = 1.0
                 weighty = 1.0
             })
-        }
-    }
-
-    fun readExternal(element: Element) {
-        for ((key, option) in options) {
-            option.readXml(element, key)
-        }
-    }
-
-    fun writeExternal(element: Element) {
-        for ((key, option) in options) {
-            if (!option.isDefault) {
-                option.writeXml(element, key)
-            }
         }
     }
 }

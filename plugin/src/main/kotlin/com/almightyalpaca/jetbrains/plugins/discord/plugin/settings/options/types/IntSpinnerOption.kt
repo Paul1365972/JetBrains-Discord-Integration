@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,25 +23,33 @@ import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.label
 import com.intellij.ui.JBIntSpinner
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
+import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JSpinner
 import javax.swing.SpinnerNumberModel
 
-fun OptionCreator<in Int>.spinner(description: String, initialValue: Int, minValue: Int = Int.MIN_VALUE, maxValue: Int = Int.MAX_VALUE, step: Int = 1, format: String = "#", enabled :Boolean = true) =
-    OptionProviderImpl(this, IntSpinnerOption(description, initialValue, step, minValue, maxValue, format, enabled))
+fun OptionCreator<in Int>.spinner(text: String, description: String? = null, initialValue: Int, minValue: Int = Int.MIN_VALUE, maxValue: Int = Int.MAX_VALUE, step: Int = 1, format: String = "#", enabled: Boolean = true) =
+    OptionProviderImpl(this, IntSpinnerOption(text, description, initialValue, step, minValue, maxValue, format, enabled))
 
-fun OptionCreator<in Int>.spinner(description: String, initialValue: Int, range: IntRange, step: Int = 1, format: String = "#", enabled :Boolean = true) =
-    spinner(description, initialValue, range.first, range.last, step, format, enabled)
+fun OptionCreator<in Int>.spinner(text: String, initialValue: Int, minValue: Int = Int.MIN_VALUE, maxValue: Int = Int.MAX_VALUE, step: Int = 1, format: String = "#", enabled: Boolean = true) =
+    OptionProviderImpl(this, IntSpinnerOption(text, null, initialValue, step, minValue, maxValue, format, enabled))
+
+fun OptionCreator<in Int>.spinner(text: String, description: String? = null, initialValue: Int, range: IntRange, step: Int = 1, format: String = "#", enabled: Boolean = true) =
+    spinner(text, description, initialValue, range.first, range.last, step, format, enabled)
+
+fun OptionCreator<in Int>.spinner(text: String, initialValue: Int, range: IntRange, step: Int = 1, format: String = "#", enabled: Boolean = true) =
+    spinner(text, null, initialValue, range.first, range.last, step, format, enabled)
 
 class IntSpinnerOption(
-    description: String,
+    text: String,
+    description: String?,
     initialValue: Int,
     private val step: Int,
     private val minValue: Int = Int.MIN_VALUE,
     private val maxValue: Int = Int.MAX_VALUE,
     private val format: String,
     private val enabled: Boolean
-) : SimpleOption<Int>(description, initialValue.coerceIn(minValue, maxValue)) {
+) : SimpleOption<Int>(text, description, initialValue.coerceIn(minValue, maxValue)) {
     override fun transformValue(value: Int) = value.coerceIn(minValue, maxValue)
 
     override val componentImpl by lazy {
@@ -53,11 +61,11 @@ class IntSpinnerOption(
         }
     }
 
-    override val component by lazy {
+    override val component: JComponent by lazy {
         JPanel().apply {
             layout = GridBagLayout()
 
-            val label = label(description).apply {
+            val label = label(text).apply {
                 this.isEnabled = enabled
             }
             add(label, gbc {

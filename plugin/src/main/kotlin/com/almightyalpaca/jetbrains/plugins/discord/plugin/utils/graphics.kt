@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.utils
 
+import com.almightyalpaca.jetbrains.plugins.discord.icons.utils.get
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.User
-import com.almightyalpaca.jetbrains.plugins.discord.shared.utils.get
 import java.awt.*
 import java.awt.Color
 import java.awt.geom.Path2D

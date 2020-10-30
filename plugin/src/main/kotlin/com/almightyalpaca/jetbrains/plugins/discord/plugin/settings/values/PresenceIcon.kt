@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,12 @@ package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values
 
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.RenderContext
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.SimpleValue
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.ToolTipProvider
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.UiValueType
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.Asset as SourceAsset
 
 typealias IconValue = SimpleValue<PresenceIcon>
 
-enum class PresenceIcon(val description: String, override val toolTip: String? = null) : ToolTipProvider {
+enum class PresenceIcon(override val text: String, override val description: String? = null) : RenderedValue<PresenceIcon.Result>, UiValueType {
     APPLICATION("Application") {
         override fun RenderContext.getResult() = icons?.getAsset("application").toResult()
     },
@@ -34,12 +35,6 @@ enum class PresenceIcon(val description: String, override val toolTip: String? =
     NONE("None") {
         override fun RenderContext.getResult() = Result.Empty
     };
-
-    protected abstract fun RenderContext.getResult(): Result
-
-    fun get(context: RenderContext) = context.run { getResult() }
-
-    override fun toString() = description
 
     object Large {
         val Application = APPLICATION to arrayOf(APPLICATION, NONE)
@@ -53,13 +48,13 @@ enum class PresenceIcon(val description: String, override val toolTip: String? =
         val File = APPLICATION to arrayOf(APPLICATION, FILE, NONE)
     }
 
-    fun com.almightyalpaca.jetbrains.plugins.discord.shared.source.Asset?.toResult() = when (this) {
+    fun SourceAsset?.toResult() = when (this) {
         null -> Result.Empty
         else -> Result.Asset(this)
     }
 
     sealed class Result {
         object Empty : Result()
-        data class Asset(val value: com.almightyalpaca.jetbrains.plugins.discord.shared.source.Asset) : Result()
+        data class Asset(val value: SourceAsset) : Result()
     }
 }

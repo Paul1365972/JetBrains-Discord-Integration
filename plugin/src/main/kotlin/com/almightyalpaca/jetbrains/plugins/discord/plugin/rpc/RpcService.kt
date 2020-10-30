@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc
 
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.DiscordPlugin
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.connection.NativeRpcConnection
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.connection.RpcConnection
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.DisposableCoroutineScope
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.debugLazy
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -48,56 +51,87 @@ class RpcService : DisposableCoroutineScope {
         delay(20_000)
 
         synchronized(this@RpcService) {
+            DiscordPlugin.LOG.debug("Checking for running rpc connection")
+
             val connection = connection ?: return@launch
 
             if (!connection.running) {
+                DiscordPlugin.LOG.debug("Rpc connection not running, reconnecting")
+
                 update(lastPresence, forceReconnect = true)
             } else {
+                DiscordPlugin.LOG.debug("Rpc connection is running")
+
                 checkConnected()
             }
         }
     }
 
-    private fun onReady(user: User) {
+    private fun updateUser(user: User?) {
         _user = user
+
         update(lastPresence, forceUpdate = true)
     }
 
-    fun update(presence: RichPresence?) = update(presence, forceUpdate = false, forceReconnect = false)
-
     @Synchronized
     fun update(presence: RichPresence?, forceUpdate: Boolean = false, forceReconnect: Boolean = false) {
-        if (Disposer.isDisposed(this) || (!forceUpdate && !forceReconnect && lastPresence == presence)) {
-            return
-        }
+        try {
+            DiscordPlugin.LOG.debugLazy { "Updating presence, forceUpdate=$forceUpdate, forceReconnect=$forceReconnect" }
 
-        lastPresence = presence
-
-        if (presence?.appId == null) { // Stop connection
-            if (connection != null) {
-                connectionChecker?.cancel()
-                connectionChecker = null
-                connection?.disconnect()
-                connection = null
+            if (Disposer.isDisposed(this)) {
+                DiscordPlugin.LOG.debug("Skipping presence update, service already disposed")
+                return
             }
-        } else {
-            if (forceReconnect || connection?.appId != presence.appId) {
+
+            // TODO: check if this is the source of stuck updates
+            // if (!forceUpdate && !forceReconnect && lastPresence == presence) {
+            //     DiscordPlugin.LOG.debug("Skipping presence update, nothing to do")
+            //     return
+            // }
+
+            lastPresence = presence
+
+            if (presence?.appId == null) { // Stop connection
+                when (presence) {
+                    null -> DiscordPlugin.LOG.debug("Presence null, stopping connection")
+                    else -> DiscordPlugin.LOG.debug("Presence.appId null, stopping connection")
+                }
+
                 if (connection != null) {
                     connectionChecker?.cancel()
                     connectionChecker = null
-                    connection?.run(Disposer::dispose)
+                    connection?.disconnect()
                     connection = null
                 }
+            } else {
+                if (forceReconnect || connection?.appId != presence.appId) {
+                    when {
+                        forceReconnect -> DiscordPlugin.LOG.debug("Forcing reconnect to client")
+                        connection == null -> DiscordPlugin.LOG.debug("Connecting to client")
+                        else -> DiscordPlugin.LOG.debug("Reconnecting to client due to changed appId")
+                    }
 
-                connection = NativeRpcConnection(presence.appId) { user -> onReady(user) }.apply {
-                    Disposer.register(this@RpcService, this@apply)
-                    connect()
+                    if (connection != null) {
+                        connectionChecker?.cancel()
+                        connectionChecker = null
+                        connection?.run(Disposer::dispose)
+                        connection = null
+                    }
+
+                    connection = NativeRpcConnection(presence.appId, ::updateUser).apply {
+                        Disposer.register(this@RpcService, this@apply)
+                        connect()
+                    }
+                    connectionChecker = checkConnected()
+
                 }
-                connectionChecker = checkConnected()
 
+                connection?.send(presence)
             }
-
-            connection?.send(presence)
+        } catch (e: ProcessCanceledException) {
+            throw e
+        } catch (e: Exception) {
+            DiscordPlugin.LOG.error("Error while updating presence", e)
         }
     }
 

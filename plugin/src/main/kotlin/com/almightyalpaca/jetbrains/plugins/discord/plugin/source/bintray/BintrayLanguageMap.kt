@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.source.bintray
 
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.Language
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.abstract.AbstractLanguageMap
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.Language
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.abstract.AbstractLanguageMap
 
 class BintrayLanguageMap(languages: Collection<Language>) : AbstractLanguageMap(languages)

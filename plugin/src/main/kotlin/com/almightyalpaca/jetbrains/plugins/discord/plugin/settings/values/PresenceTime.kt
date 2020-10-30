@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,28 @@ package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values
 
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.RenderContext
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.SimpleValue
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.ToolTipProvider
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.UiValueType
 
 typealias TimeValue = SimpleValue<PresenceTime>
 
-enum class PresenceTime(val description: String, override val toolTip: String? = null) : ToolTipProvider {
-    APPLICATION("Application") {
-        override fun RenderContext.getResult() = applicationData?.applicationStartTime.toResult()
+enum class PresenceTime(override val text: String, override val description: String? = null) : RenderedValue<PresenceTime.Result>, UiValueType {
+    APPLICATION("Application (active)", "Time since the application has been opened and the IDE has not been idle") {
+        override fun RenderContext.getResult() = applicationData?.applicationTimeActive.toResult()
     },
-    PROJECT("Project") {
-        override fun RenderContext.getResult() = projectData?.applicationStartTime.toResult()
+    APPLICATION_TOTAL("Application (total)", "Time since the application has been started") {
+        override fun RenderContext.getResult() = applicationData?.applicationTimeOpened.toResult()
     },
-    FILE("File") {
-        override fun RenderContext.getResult() = fileData?.applicationStartTime.toResult()
+    PROJECT("Project (active)", "Time since the project has been opened and the IDE has not been idle") {
+        override fun RenderContext.getResult() = projectData?.projectTimeActive.toResult()
+    },
+    PROJECT_TOTAL("Project (total)", "Time since the project has been opened") {
+        override fun RenderContext.getResult() = projectData?.projectTimeOpened.toResult()
+    },
+    FILE("File (active)", "Time since the file has been opened and the IDE has not been idle") {
+        override fun RenderContext.getResult() = fileData?.fileTimeActive.toResult()
+    },
+    FILE_TOTAL("File (total)", "Time since the file has been opened") {
+        override fun RenderContext.getResult() = fileData?.fileTimeOpened.toResult()
     },
     CUSTOM("Custom") {
         override fun RenderContext.getResult() = Result.Custom
@@ -39,16 +48,10 @@ enum class PresenceTime(val description: String, override val toolTip: String? =
         override fun RenderContext.getResult() = Result.Empty
     };
 
-    protected abstract fun RenderContext.getResult(): Result
-
-    fun get(context: RenderContext) = context.run { getResult() }
-
-    override fun toString() = description
-
     companion object {
-        val Application = APPLICATION to arrayOf(APPLICATION, CUSTOM, HIDE)
-        val Project = APPLICATION to arrayOf(APPLICATION, PROJECT, CUSTOM, HIDE)
-        val File = APPLICATION to arrayOf(APPLICATION, PROJECT, FILE, CUSTOM, HIDE)
+        val Application = APPLICATION to arrayOf(APPLICATION, APPLICATION_TOTAL, CUSTOM, HIDE)
+        val Project = APPLICATION to arrayOf(APPLICATION, APPLICATION_TOTAL, PROJECT, PROJECT_TOTAL, CUSTOM, HIDE)
+        val File = APPLICATION to arrayOf(APPLICATION, APPLICATION_TOTAL, PROJECT, PROJECT_TOTAL, FILE, FILE_TOTAL, CUSTOM, HIDE)
     }
 
     fun Long?.toResult() = when (this) {

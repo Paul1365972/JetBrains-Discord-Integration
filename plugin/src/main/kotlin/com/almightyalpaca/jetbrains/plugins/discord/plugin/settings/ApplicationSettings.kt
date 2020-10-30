@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings
 
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.OptionHolder
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.BooleanValue
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.IntValue
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.StringValue
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.ThemeValue
-import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.*
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.*
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.ApplicationTypeValue
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.IconValue
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.TextValue
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.TimeValue
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.service
 import org.jdom.Element
@@ -40,39 +40,46 @@ interface ApplicationSettings : PersistentStateComponent<Element>, OptionHolder 
     val timeCustom: StringValue
 
     val filePrefixEnabled: BooleanValue
+    val fileHideVcsIgnored: BooleanValue
 
-    val applicationDetails: LineValue
-    val applicationDetailsCustom: StringValue
-    val applicationState: LineValue
-    val applicationStateCustom: StringValue
+    val applicationDetails: TextValue
+    val applicationDetailsCustom: TemplateValue
+    val applicationState: TextValue
+    val applicationStateCustom: TemplateValue
     val applicationIconLarge: IconValue
-    val applicationIconLargeText: IconTextValue
+    val applicationIconLargeText: TextValue
+    val applicationIconLargeTextCustom: TemplateValue
     val applicationIconSmall: IconValue
-    val applicationIconSmallText: IconTextValue
+    val applicationIconSmallText: TextValue
+    val applicationIconSmallTextCustom: TemplateValue
     val applicationTime: TimeValue
 
-    val projectDetails: LineValue
-    val projectDetailsCustom: StringValue
-    val projectState: LineValue
-    val projectStateCustom: StringValue
+    val projectDetails: TextValue
+    val projectDetailsCustom: TemplateValue
+    val projectState: TextValue
+    val projectStateCustom: TemplateValue
     val projectIconLarge: IconValue
-    val projectIconLargeText: IconTextValue
+    val projectIconLargeText: TextValue
+    val projectIconLargeTextCustom: TemplateValue
     val projectIconSmall: IconValue
-    val projectIconSmallText: IconTextValue
+    val projectIconSmallText: TextValue
+    val projectIconSmallTextCustom: TemplateValue
     val projectTime: TimeValue
 
-    val fileDetails: LineValue
-    val fileDetailsCustom: StringValue
-    val fileState: LineValue
-    val fileStateCustom: StringValue
+    val fileDetails: TextValue
+    val fileDetailsCustom: TemplateValue
+    val fileState: TextValue
+    val fileStateCustom: TemplateValue
     val fileIconLarge: IconValue
-    val fileIconLargeText: IconTextValue
+    val fileIconLargeText: TextValue
+    val fileIconLargeTextCustom: TemplateValue
     val fileIconSmall: IconValue
-    val fileIconSmallText: IconTextValue
+    val fileIconSmallText: TextValue
+    val fileIconSmallTextCustom: TemplateValue
     val fileTime: TimeValue
 
     val applicationType: ApplicationTypeValue
     val theme: ThemeValue
 
-    val newProjectShow: NewProjectShowValue
+    val applicationLastUpdateNotification: StringValue
 }

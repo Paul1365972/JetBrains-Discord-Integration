@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.source.bintray
 
-import com.almightyalpaca.jetbrains.plugins.discord.shared.matcher.Matcher
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.Language
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.LanguageMap
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.LanguageSource
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.abstract.AbstractLanguageSourceMap
+import com.almightyalpaca.jetbrains.plugins.discord.icons.matcher.Matcher
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.Language
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.LanguageMap
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.LanguageSource
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.abstract.AbstractLanguageSourceMap
 
 class BintrayLanguageSourceMap(map: Map<String, LanguageSource>) : AbstractLanguageSourceMap(map) {
     override fun createLanguageMap(languages: Map<String, Language>): LanguageMap = BintrayLanguageMap(languages.values)

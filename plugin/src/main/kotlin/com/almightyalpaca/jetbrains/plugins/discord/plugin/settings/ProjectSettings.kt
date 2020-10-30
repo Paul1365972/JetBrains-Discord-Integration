@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,19 @@ package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.OptionHolder
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.BooleanValue
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types.StringValue
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.values.ProjectShowValue
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.jdom.Element
 
 val Project.settings: ProjectSettings
-get() = service()
+    get() = service()
 
 interface ProjectSettings : PersistentStateComponent<Element>, OptionHolder {
     val project: Project
 
-    val show: BooleanValue
+    val show: ProjectShowValue
 
     val nameOverrideEnabled: BooleanValue
     val nameOverrideText: StringValue

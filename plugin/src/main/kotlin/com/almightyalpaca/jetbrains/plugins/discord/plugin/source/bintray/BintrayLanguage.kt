@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.source.bintray
 
-import com.almightyalpaca.jetbrains.plugins.discord.shared.matcher.Matcher
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.Language
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.LanguageMatch
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.abstract.AbstractLanguage
+import com.almightyalpaca.jetbrains.plugins.discord.icons.matcher.Matcher
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.Language
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.LanguageMatch
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.abstract.AbstractLanguage
 
 object BintrayLanguage {
     class Simple(id: String, name: String, parent: Language?, assetIds: List<String>?, matchers: Map<Matcher.Target, Matcher>) : AbstractLanguage.Simple(id, name, parent, assetIds, matchers) {

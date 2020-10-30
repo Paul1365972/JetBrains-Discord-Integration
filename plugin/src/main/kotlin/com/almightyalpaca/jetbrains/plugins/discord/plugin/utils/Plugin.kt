@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,21 @@ import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
 
 object Plugin {
-    private val pluginId: PluginId? by lazy { PluginId.getId("com.almightyalpaca.intellij.plugins.discord") }
+    val pluginId: PluginId? by lazy { PluginId.getId("com.almightyalpaca.intellij.plugins.discord") }
     private val plugin: IdeaPluginDescriptor? by lazy { PluginManagerCore.getPlugin(pluginId) }
 
     fun getId() = pluginId?.idString
 
     val version: Version? by lazy { plugin?.version?.let { Version(it) } }
 
+    val branchBase = "https://github.com/Almighty-Alpaca/JetBrains-Discord-Integration/blob/" + when (val version = version) {
+        null -> "master"
+        else -> "v" + version.lastStable
+    }
+
     class Version(private val asString: String) {
+        val lastStable = asString.substringBefore("+")
+
         override fun toString(): String = asString
 
         fun isStable() = asString.matches(Regex("""\d+\.\d+\.\d+"""))

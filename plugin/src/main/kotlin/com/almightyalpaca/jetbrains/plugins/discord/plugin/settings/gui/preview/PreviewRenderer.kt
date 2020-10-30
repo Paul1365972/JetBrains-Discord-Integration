@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.gui.preview
 
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.data.Data
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.data.dataService
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.RenderContext
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.render.Renderer
@@ -23,6 +24,8 @@ import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.RichPresence
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc.rpcService
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.settings
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.source.sourceService
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.time.timeActive
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.time.timeOpened
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.*
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Color.blurple
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Color.darkOverlay
@@ -30,6 +33,10 @@ import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Color.green
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Color.greenTranslucent
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Color.whiteTranslucent60
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Color.whiteTranslucent80
+import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ex.ApplicationInfoEx
+import com.intellij.openapi.project.ProjectManager
 import org.apache.commons.lang3.time.DurationFormatUtils
 import java.awt.Color
 import java.awt.Font
@@ -45,8 +52,6 @@ class PreviewRenderer {
 
     private val width = 250
     private val height = 273
-
-    var type = Renderer.Type.APPLICATION
 
     private var image: BufferedImage = createImage(width, height)
 
@@ -81,15 +86,12 @@ class PreviewRenderer {
     private val font14MediumBaseline: Int = font14MediumMetrics.maxAscent + font14MediumMetrics.leading
     private val font11BlackBaseline: Int = font11BlackMetrics.maxAscent + font11BlackMetrics.leading
 
-    private val font14BoldMaxHeight: Int =
-        font14BoldMetrics.maxAscent + font14BoldMetrics.leading + font14BoldMetrics.maxDescent
-    private val font14MediumMaxHeight: Int =
-        font14MediumMetrics.maxAscent + font14MediumMetrics.leading + font14MediumMetrics.maxDescent
+    private val font14BoldMaxHeight: Int = font14BoldMetrics.maxAscent + font14BoldMetrics.leading + font14BoldMetrics.maxDescent
+    private val font14MediumMaxHeight: Int = font14MediumMetrics.maxAscent + font14MediumMetrics.leading + font14MediumMetrics.maxDescent
 
     @Synchronized
-    suspend fun draw(force: Boolean = false): ModifiedImage {
-
-        val data = dataService.getData() ?: return ModifiedImage(false, image)
+    suspend fun draw(type: Renderer.Type.Application, force: Boolean = false): ModifiedImage {
+        val data = dataService.getData(Renderer.Mode.PREVIEW)?.completeMissingData() ?: return ModifiedImage(false, image)
 
         val context = RenderContext(sourceService.source, data, Renderer.Mode.PREVIEW)
         val renderer = type.createRenderer(context)
@@ -154,11 +156,7 @@ class PreviewRenderer {
 
                         color = whiteTranslucent60
                         font = font16Regular
-                        drawString(
-                            tag,
-                            mid - textWidth / 2 + nameWidth,
-                            100 + font16BoldBaseline + (font16BoldBaseline - font16RegularBaseline) / 2
-                        )
+                        drawString(tag, mid - textWidth / 2 + nameWidth, 100 + font16BoldBaseline + (font16BoldBaseline - font16RegularBaseline) / 2)
                     }
                 }
 
@@ -202,7 +200,7 @@ class PreviewRenderer {
                 }
             }
 
-            val applicationName = settings.applicationType.getComponent().applicationNameReadable
+            val applicationName = settings.applicationType.getPreviewValue().applicationNameReadable
             if (force || lastApplicationName != applicationName || lastImagesEmpty != imagesEmpty) {
                 // IDE name
                 image.withGraphics {
@@ -269,25 +267,9 @@ class PreviewRenderer {
                         }
 
                         color = blurple
-                        fill(
-                            roundRectangle(
-                                0.0,
-                                sectionStart.toDouble(),
-                                width,
-                                (image.height - sectionStart).toDouble(),
-                                radiusBottomLeft = 10.0
-                            )
-                        )
+                        fill(roundRectangle(0.0, sectionStart.toDouble(), width, (image.height - sectionStart).toDouble(), radiusBottomLeft = 10.0))
                         color = darkOverlay
-                        fill(
-                            roundRectangle(
-                                0.0,
-                                sectionStart.toDouble(),
-                                width,
-                                (image.height - sectionStart).toDouble(),
-                                radiusBottomLeft = 10.0
-                            )
-                        )
+                        fill(roundRectangle(0.0, sectionStart.toDouble(), width, (image.height - sectionStart).toDouble(), radiusBottomLeft = 10.0))
 
                         if (large != null) {
                             drawImage(large, 10, sectionStart, null)
@@ -337,20 +319,15 @@ class PreviewRenderer {
             private inner class Details {
                 var lastLine: String? = null
 
-                fun draw(
-                    image: BufferedImage,
-                    presence: RichPresence,
-                    imagesEmpty: Boolean,
-                    force: Boolean
-                ): Pair<Boolean, Boolean> {
+                fun draw(image: BufferedImage, presence: RichPresence, imagesEmpty: Boolean, force: Boolean): Pair<Boolean, Boolean> {
                     val line = presence.details
 
                     if (force || lastImagesEmpty != imagesEmpty || lastLine != line) {
                         lastLine = line
 
                         image.withGraphics {
-                            val sectionStart =
-                                (image.height * 0.6).toInt() + 10 + font11BlackHeight + 8 + font14BoldMaxHeight
+                            val sectionStart = (image.height * 0.6).toInt() + 10 + font11BlackHeight + 8 + font14BoldMaxHeight
+
                             val indentation = when (imagesEmpty) {
                                 true -> 7
                                 false -> 77
@@ -361,7 +338,7 @@ class PreviewRenderer {
                             color = darkOverlay
                             fillRect(indentation, sectionStart, image.width - indentation, font14MediumMaxHeight)
 
-                            return if (line.isNullOrBlank()) {
+                            return if (line?.isInvisible() != false) {
                                 true to true
                             } else {
                                 val lineCut = line.limitWidth(font14MediumMetrics, image.width - (indentation + 3 + 10))
@@ -374,31 +351,24 @@ class PreviewRenderer {
                             }
                         }
 
-                        return true to line.isNullOrBlank()
+                        return true to (line?.isInvisible() != false)
                     }
 
-                    return false to lastLine.isNullOrBlank()
+                    return false to (lastLine?.isInvisible() != false)
                 }
             }
 
             private inner class State {
                 var lastLine: String? = null
 
-                fun draw(
-                    image: BufferedImage,
-                    presence: RichPresence,
-                    imagesEmpty: Boolean,
-                    detailsEmpty: Boolean,
-                    force: Boolean
-                ): Pair<Boolean, Boolean> {
+                fun draw(image: BufferedImage, presence: RichPresence, imagesEmpty: Boolean, detailsEmpty: Boolean, force: Boolean): Pair<Boolean, Boolean> {
                     val line = presence.state
 
                     if (force || lastImagesEmpty != imagesEmpty || lastDetailsEmpty != detailsEmpty || lastLine != line) {
                         lastLine = line
 
                         image.withGraphics {
-                            var sectionStart =
-                                (image.height * 0.6).toInt() + 10 + font11BlackHeight + 8 + font14BoldMaxHeight
+                            var sectionStart = (image.height * 0.6).toInt() + 10 + font11BlackHeight + 8 + font14BoldMaxHeight
                             if (!detailsEmpty) {
                                 sectionStart += font14MediumMaxHeight
                             }
@@ -413,7 +383,7 @@ class PreviewRenderer {
                             color = darkOverlay
                             fillRect(indentation, sectionStart, image.width - indentation, font14MediumMaxHeight)
 
-                            return if (line.isNullOrBlank()) {
+                            return if (line?.isInvisible() != false) {
                                 true to true
                             } else {
                                 val lineCut = line.limitWidth(font14MediumMetrics, image.width - (indentation + 3 + 10))
@@ -427,7 +397,7 @@ class PreviewRenderer {
                         }
                     }
 
-                    return true to line.isNullOrBlank()
+                    return true to (line?.isInvisible() != false)
                 }
             }
 
@@ -451,8 +421,8 @@ class PreviewRenderer {
                         lastTimeNow = timeNow
 
                         image.withGraphics {
-                            var sectionStart =
-                                (image.height * 0.6).toInt() + 10 + font11BlackHeight + 8 + font14BoldMaxHeight
+                            var sectionStart = (image.height * 0.6).toInt() + 10 + font11BlackHeight + 8 + font14BoldMaxHeight
+
                             if (!detailsEmpty) {
                                 sectionStart += font14MediumMaxHeight
                             }
@@ -467,37 +437,20 @@ class PreviewRenderer {
                             }
 
                             color = blurple
-                            fill(
-                                roundRectangle(
-                                    indentation,
-                                    sectionStart.toDouble(),
-                                    image.width - indentation,
-                                    (image.height - sectionStart).toDouble(),
-                                    radiusBottomRight = 10.0
-                                )
-                            )
+                            fill(roundRectangle(indentation, sectionStart.toDouble(), image.width - indentation, (image.height - sectionStart).toDouble(), radiusBottomRight = 10.0))
                             color = darkOverlay
-                            fill(
-                                roundRectangle(
-                                    indentation,
-                                    sectionStart.toDouble(),
-                                    image.width - indentation,
-                                    (image.height - sectionStart).toDouble(),
-                                    radiusBottomRight = 10.0
-                                )
-                            )
+                            fill(roundRectangle(indentation, sectionStart.toDouble(), image.width - indentation, (image.height - sectionStart).toDouble(), radiusBottomRight = 10.0))
 
                             if (time != null) {
                                 val millis = Duration.between(time, timeNow).toMillis()
-                                val formatted = DurationFormatUtils.formatDuration(millis, "HH:mm:ss")
+                                val formatted = when {
+                                    millis < 1 * 60 * 60 * 1000 -> DurationFormatUtils.formatDuration(millis, "mm:ss")
+                                    else -> DurationFormatUtils.formatDuration(millis, "HH:mm:ss")
+                                }
 
                                 font = font14Medium
                                 color = whiteTranslucent80
-                                drawString(
-                                    "$formatted elapsed",
-                                    indentation.toInt() + 3,
-                                    sectionStart + font14MediumBaseline
-                                )
+                                drawString("$formatted elapsed", indentation.toInt() + 3, sectionStart + font14MediumBaseline)
                             }
                         }
 
@@ -509,4 +462,46 @@ class PreviewRenderer {
             }
         }
     }
+}
+
+private val applicationCode = ApplicationInfo.getInstance().build.productCode
+
+private fun Data.completeMissingData(): Data.File {
+    val application = this as? Data.Application
+    val project = this as? Data.Project
+    val file = this as? Data.File
+
+    val projectDescription = project?.projectDescription
+
+    val dummyFileName = sourceService.source.getApplicationsOrNull()?.get(applicationCode)?.dummyFile ?: "dummy.txt"
+
+    val applicationTimeOpened = application?.applicationTimeOpened ?: ApplicationManager.getApplication().timeOpened
+    val applicationTimeActive = application?.applicationTimeActive ?: ApplicationManager.getApplication().timeActive
+
+    return Data.File(
+        application?.applicationName ?: settings.applicationType.getPreviewValue().applicationNameReadable,
+        application?.applicationVersion ?: ApplicationInfoEx.getInstance().fullVersion,
+        applicationTimeOpened,
+        applicationTimeActive,
+        application?.applicationSettings ?: settings,
+        project?.projectName ?: "Dummy project",
+        if (projectDescription.isNullOrBlank()) "Dummies are very nice test objects" else projectDescription,
+        project?.projectTimeOpened ?: applicationTimeOpened,
+        project?.projectTimeActive ?: applicationTimeActive,
+        project?.projectSettings ?: ProjectManager.getInstance().defaultProject.settings,
+        project?.vcsBranch ?: "master",
+        project?.debuggerActive ?: false,
+        file?.fileName ?: dummyFileName,
+        file?.fileNameUnique ?: dummyFileName,
+        file?.fileTimeOpened ?: project?.projectTimeOpened ?: applicationTimeOpened,
+        file?.fileTimeActive ?: project?.projectTimeActive ?: applicationTimeActive,
+        file?.filePath ?: "dummy/$dummyFileName",
+        file?.fileIsWriteable ?: true,
+        file?.editorIsTextEditor ?: false,
+        file?.caretLine ?: 0,
+        file?.lineCount ?: 0,
+        file?.moduleName ?: "dummy-module",
+        file?.pathInModule ?: "/dummy/$dummyFileName",
+        file?.fileSize ?: 0
+    )
 }

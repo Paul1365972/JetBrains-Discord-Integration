@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,12 @@ class ProjectRenderer(context: RenderContext) : Renderer(context) {
         stateCustom = settings.projectStateCustom,
         largeIcon = settings.projectIconLarge,
         largeIconText = settings.projectIconLargeText,
+        largeIconTextCustom = settings.projectIconLargeTextCustom,
         smallIcon = settings.projectIconSmall,
         smallIconText = settings.projectIconSmallText,
+        smallIconTextCustom = settings.projectIconSmallTextCustom,
         startTimestamp = settings.projectTime,
         timestampCustom = settings.timeCustom,
-            timestampOverride = settings.timeOverride
+        timestampOverride = settings.timeOverride
     )
 }

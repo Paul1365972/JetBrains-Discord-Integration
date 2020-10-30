@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.rpc
 
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.Asset
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.*
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.Asset
 import java.awt.image.BufferedImage
 import java.net.URL
 import java.time.OffsetDateTime
@@ -123,14 +123,18 @@ sealed class User {
         return result
     }
 
-    class Normal(override val name: String, override val tag: String, val id: Long, val avatarId: String) : User() {
-        override fun getAvatar(size: Int?) = when (size) {
-            null -> URL("https://cdn.discordapp.com/avatars/$id/$avatarId.png?size=128")
-            else -> URL(
-                "https://cdn.discordapp.com/avatars/$id/$avatarId.png?size=${size.roundToNextPowerOfTwo()
-                    .coerceIn(16..4096)}"
-            )
-        }.getImage()
+    class Normal(override val name: String, override val tag: String, val id: Long, val avatarId: String?) : User() {
+        override fun getAvatar(size: Int?): BufferedImage? {
+            val fixedSize = when (size) {
+                null -> 128
+                else -> size.roundToNextPowerOfTwo().coerceIn(16..4096)
+            }
+
+            return when (avatarId) {
+                null, "" -> URL("https://cdn.discordapp.com/embed/avatars/${(tag.toInt() % 5)}.png?size=$fixedSize")
+                else -> URL("https://cdn.discordapp.com/avatars/$id/$avatarId.png?size=$fixedSize")
+            }.getImage()
+        }
     }
 
     object CLYDE : User() {

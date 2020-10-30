@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2017-2019 Aljoscha Grebe
+  ~ Copyright 2017-2020 Aljoscha Grebe
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -14,14 +14,17 @@
   ~ limitations under the License.
   -->
 
-<idea-plugin>
-    <id>io.github.paul1365972.intellij.plugins.discord</id>
+<idea-plugin url="https://github.com/Almighty-Alpaca/JetBrains-Discord-Integration">
+    <id>com.almightyalpaca.intellij.plugins.discord</id>
     <name>Discord Integration (Custom)</name>
     <vendor email="aljoschagrebe@gmail.com" url="https://github.com/Almighty-Alpaca">Almighty Alpaca, modified by Paul1365972</vendor>
+
 
     <idea-version since-build="201.4515.24"/>
 
     <depends>com.intellij.modules.lang</depends>
+
+    <depends optional="true" config-file="git-extension.xml">Git4Idea</depends>
 
     <application-components>
         <component>
@@ -35,13 +38,27 @@
         <listener
                 class="com.almightyalpaca.jetbrains.plugins.discord.plugin.diagnose.DiagnoseAppLifecycleListener"
                 topic="com.intellij.ide.AppLifecycleListener"/>
+
         <listener
                 class="com.almightyalpaca.jetbrains.plugins.discord.plugin.render.RenderAppLifecycleListener"
                 topic="com.intellij.ide.AppLifecycleListener"/>
+
         <listener
                 class="com.almightyalpaca.jetbrains.plugins.discord.plugin.development.PreventUnloadingDynamicPluginListener"
                 topic="com.intellij.ide.plugins.DynamicPluginListener"/>
 
+        <listener
+                class="com.almightyalpaca.jetbrains.plugins.discord.plugin.time.TimeDynamicPluginListener"
+                topic="com.intellij.ide.plugins.DynamicPluginListener"/>
+        <listener
+                class="com.almightyalpaca.jetbrains.plugins.discord.plugin.time.TimeProjectManagerListener"
+                topic="com.intellij.openapi.project.ProjectManagerListener"/>
+        <listener
+                class="com.almightyalpaca.jetbrains.plugins.discord.plugin.time.TimeAppLifecycleListener"
+                topic="com.intellij.ide.AppLifecycleListener"/>
+        <listener
+                class="com.almightyalpaca.jetbrains.plugins.discord.plugin.time.TimeFileEditorManagerListener"
+                topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </applicationListeners>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -51,11 +68,6 @@
         <applicationService
                 serviceInterface="com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.ApplicationSettings"
                 serviceImplementation="com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.impl.ApplicationSettingsImpl"/>
-
-        <projectService
-                serviceImplementation="com.almightyalpaca.jetbrains.plugins.discord.plugin.notifications.ProjectNotificationSettings"/>
-        <applicationService
-                serviceImplementation="com.almightyalpaca.jetbrains.plugins.discord.plugin.notifications.ApplicationNotificationSettings"/>
 
         <applicationConfigurable
                 groupId="other"
@@ -69,6 +81,7 @@
                 groupWeight="200"
                 displayName="Project"
                 id="discord-project"
+                nonDefaultProject="false"
                 instance="com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.ProjectConfigurable"/>
 
         <backgroundPostStartupActivity
@@ -79,23 +92,24 @@
         <group id="DiscordActionGroup"
                text="Discord"
                popup="true"
-               compact="true"
-               icon="/discord/images/logo/blurple.png">
+               icon="/discord/images/logo/blurple.svg">
             <add-to-group group-id="ToolsMenu"/>
 
             <action id="DiscordActionGroup.ApplicationHideAction"
-                    class="com.almightyalpaca.jetbrains.plugins.discord.plugin.actions.ApplicationHideAction"/>
-            <action id="DiscordActionGroup.ProjectHideAction"
-                    class="com.almightyalpaca.jetbrains.plugins.discord.plugin.actions.ProjectHideAction"/>
+                    class="com.almightyalpaca.jetbrains.plugins.discord.plugin.actions.ApplicationShowAction"/>
+            <group id="DiscordActionGroup.ProjectShowAction"
+                   class="com.almightyalpaca.jetbrains.plugins.discord.plugin.actions.ProjectShowAction"/>
 
             <separator/>
 
             <action id="DiscordActionGroup.RenderUpdateAction"
-                    class="com.almightyalpaca.jetbrains.plugins.discord.plugin.actions.RenderUpdateAction"/>
+                    class="com.almightyalpaca.jetbrains.plugins.discord.plugin.actions.ForceRenderUpdateAction"/>
             <action id="DiscordActionGroup.ReconnectAction"
-                    class="com.almightyalpaca.jetbrains.plugins.discord.plugin.actions.ReconnectAction"/>
-
+                    class="com.almightyalpaca.jetbrains.plugins.discord.plugin.actions.ForceReconnectAction"/>
         </group>
     </actions>
 
+    <extensionPoints>
+        <extensionPoint name="vcsInfo" interface="com.almightyalpaca.jetbrains.plugins.discord.plugin.extensions.VcsInfoExtension" dynamic="true"/>
+    </extensionPoints>
 </idea-plugin>

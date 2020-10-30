@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("SuspiciousCollectionReassignment")
 
 import com.github.benmanes.gradle.versions.updates.gradle.GradleReleaseChannel
 import com.palantir.gradle.gitversion.VersionDetails
@@ -29,23 +31,13 @@ plugins {
 
 group = "com.almightyalpaca.jetbrains.plugins.discord"
 
-@Suppress("UNCHECKED_CAST")
-val versionDetails = (project.extra["versionDetails"] as Closure<VersionDetails>)()
+val versionDetails: Closure<VersionDetails> by project.extra
 
-var version = versionDetails.lastTag.removePrefix("v")
-version += when (versionDetails.commitDistance) {
+var version = versionDetails().lastTag.removePrefix("v")
+version += when (versionDetails().commitDistance) {
     0 -> ""
-    else -> "+${versionDetails.commitDistance}"
+    else -> "+${versionDetails().commitDistance}"
 }
-
-//if (!versionDetails.isCleanTag) {
-//    version += "-dirty"
-//    allprojects {
-//        listOf("publishPlugin", "uploadIcons", "uploadLanguages").forEach { name ->
-//            tasks.findByName(name)?.enabled = false
-//        }
-//    }
-//}
 
 project.version = version
 
@@ -78,8 +70,17 @@ subprojects {
     tasks {
         withType<KotlinCompile> {
             kotlinOptions {
-                jvmTarget = "11"
-                freeCompilerArgs = listOf("-Xjvm-default=enable")
+                jvmTarget = "1.8"
+                freeCompilerArgs += "-Xjvm-default=enable"
+            }
+        }
+
+        withType<JavaCompile> {
+            targetCompatibility = "1.8"
+            sourceCompatibility = "1.8"
+
+            if (JavaVersion.current() >= JavaVersion.VERSION_1_9) {
+                options.compilerArgs as MutableList<String> += listOf("--release", "8")
             }
         }
     }
@@ -99,8 +100,10 @@ tasks {
     }
 
     withType<Wrapper> {
+        val versionGradle: String by project
+
         distributionType = Wrapper.DistributionType.ALL
-        gradleVersion = "6.3"
+        gradleVersion = versionGradle
     }
 
     create<Delete>("clean") {

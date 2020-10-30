@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,23 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.development
 
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.DiscordPlugin
+import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.Plugin
 import com.intellij.ide.plugins.DynamicPluginListener
 import com.intellij.ide.plugins.IdeaPluginDescriptor
-import com.intellij.openapi.extensions.PluginId
 
 class PreventUnloadingDynamicPluginListener : DynamicPluginListener {
     override fun checkUnloadPlugin(pluginDescriptor: IdeaPluginDescriptor) {
-        if (pluginDescriptor.pluginId == PluginId.getId("")) {
-            val e =
-                Class
-                    .forName("com.intellij.ide.plugins.CannotUnloadPluginException")
-                    .constructors
-                    .first()
-                    .newInstance("unsupported") as Exception
+        DiscordPlugin.LOG.debug("Processing unload event for ${pluginDescriptor.pluginId?.idString}")
+
+        if (pluginDescriptor.pluginId == Plugin.pluginId) {
+            DiscordPlugin.LOG.info("Preventing plugin unload")
+
+            val e = Class
+                .forName("com.intellij.ide.plugins.CannotUnloadPluginException")
+                .constructors
+                .first()
+                .newInstance("unsupported") as Exception
 
             throw e
         }

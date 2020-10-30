@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Aljoscha Grebe
+ * Copyright 2017-2020 Aljoscha Grebe
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.types
 
+import com.almightyalpaca.jetbrains.plugins.discord.icons.source.Source
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.gui.themes.ThemeDialog
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.OptionCreator
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.settings.options.OptionHolder
@@ -24,7 +25,6 @@ import com.almightyalpaca.jetbrains.plugins.discord.plugin.source.sourceService
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.gbc
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.label
 import com.almightyalpaca.jetbrains.plugins.discord.plugin.utils.throwing
-import com.almightyalpaca.jetbrains.plugins.discord.shared.source.Source
 import com.intellij.openapi.util.JDOMExternalizerUtil
 import kotlinx.coroutines.future.asCompletableFuture
 import org.jdom.Element
@@ -32,12 +32,14 @@ import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.Box
 import javax.swing.JButton
+import javax.swing.JComponent
 import javax.swing.JPanel
 import kotlin.reflect.KProperty
 
-fun OptionCreator<in ThemeValue>.themeChooser(description: String) = OptionProviderImpl(this, ThemeOption(description))
+fun OptionCreator<in ThemeValue>.themeChooser(text: String, description: String? = null) =
+    OptionProviderImpl(this, ThemeOption(text, description))
 
-class ThemeOption(description: String) : Option<ThemeValue>(description), ThemeValue.Provider {
+class ThemeOption(text: String, val description: String?) : Option<ThemeValue>(text), ThemeValue.Provider {
     private val source: Source = sourceService.source
 
     private val listeners = mutableListOf<(ThemeValue) -> Unit>()
@@ -47,34 +49,37 @@ class ThemeOption(description: String) : Option<ThemeValue>(description), ThemeV
 
     var currentValue: String? = null
     var componentValue: String? = null
-        private set
+        set(value) {
+            field = value
+
+            componentImpl.text = source.getThemesOrNull()?.get(value)?.name ?: value
+        }
 
     private val componentImpl = JButton().apply button@{
         isEnabled = false
-        text = "Loading..."
+        this.text = "Loading..."
 
         addActionListener {
             val themes = this@ThemeOption.source.getThemesOrNull()
 
             if (themes != null) {
-                val dialog = ThemeDialog(themes, this@ThemeOption.componentValue)
+                val dialog = ThemeDialog(themes, componentValue)
                 val result = dialog.showAndGet()
 
                 if (result) {
                     val value = dialog.value
 
-                    this@ThemeOption.componentValue = value
-                    text = themes[value]!!.name
+                    componentValue = value
                 }
             }
         }
     }
 
-    override val component by lazy {
+    override val component: JComponent? by lazy {
         JPanel().apply {
             layout = GridBagLayout()
 
-            add(label(description), gbc {
+            add(label(text), gbc {
                 gridx = 0
                 gridy = 0
                 gridwidth = 1
@@ -146,13 +151,20 @@ class ThemeOption(description: String) : Option<ThemeValue>(description), ThemeV
 }
 
 class ThemeValue(private val option: ThemeOption) : SimpleValue<String?>() {
-    override fun get() = this.option.currentValue
-    override fun getComponent() = this.option.componentValue
-    override fun set(value: String?) {
+    override fun getStoredValue() = this.option.currentValue
+    override fun getPreviewValue() = this.option.componentValue
+    override fun setStoredValue(value: String?) {
         this.option.currentValue = value
     }
 
-    override val description: String
+    override fun setPreviewValue(value: String?) {
+        this.option.componentValue = value
+    }
+
+    override val text
+        get() = this.option.text
+
+    override val description
         get() = this.option.description
 
     interface Provider : SimpleValue.Provider<String?> {

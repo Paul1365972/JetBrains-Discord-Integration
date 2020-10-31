@@ -19,6 +19,8 @@
 
 ----
 
+*This fork lets you define a custom start time for your applications*
+
 ## Installation...
 
 ### ...from the JetBrains Plugin Repository (this is what you want to do)
